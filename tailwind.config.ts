@@ -37,6 +37,7 @@ export default {
 					navy: "#1A1F2C",
 					gold: "#E8B75A",
 					blue: "#7FB3E1",
+					darkBlue: "#305F8B", // Added the missing darkBlue color
 					lightBlue: "#A7C7E7",
 					charcoal: "#333340",
 					lightGray: "#F8F9FC",

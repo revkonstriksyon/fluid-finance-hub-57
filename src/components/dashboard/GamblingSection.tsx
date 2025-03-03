@@ -1,4 +1,3 @@
-
 import { Dice1, Trophy, Users, DollarSign, Clock, ChevronRight, Gamepad2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -206,7 +205,7 @@ const GamblingSection = () => {
                 </div>
                 
                 <Button className="w-full bg-white/20 hover:bg-white/30 text-white border-none">
-                  Jwe Kounye a
+                  Jwe Kounye A
                 </Button>
               </div>
             ))}
