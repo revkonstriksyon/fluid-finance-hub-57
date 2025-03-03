@@ -1,3 +1,4 @@
+
 import { Dice1, Trophy, Users, DollarSign, Clock, ChevronRight, Gamepad2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -170,6 +171,11 @@ const GamblingSection = () => {
     });
   };
 
+  // Find the game object based on selectedGame ID
+  const selectedGameObject = selectedGame !== null 
+    ? featuredGames.find(g => g.id === selectedGame) 
+    : null;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {selectedGame === null ? (
@@ -215,7 +221,7 @@ const GamblingSection = () => {
         <div className="finance-card">
           <div className="flex justify-between items-center mb-6">
             <h3 className="section-title mb-0">
-              {featuredGames.find(g => g.id === selectedGame)?.name}
+              {selectedGameObject?.name}
             </h3>
             <Button variant="ghost" onClick={() => setSelectedGame(null)}>
               Retounen
@@ -223,15 +229,15 @@ const GamblingSection = () => {
           </div>
           
           <div className="grid md:grid-cols-2 gap-6">
-            <div className={`${featuredGames.find(g => g.id === selectedGame)?.bgColor} rounded-xl p-6 text-white flex flex-col justify-between`}>
+            <div className={`${selectedGameObject?.bgColor} rounded-xl p-6 text-white flex flex-col justify-between`}>
               <div>
                 <div className="flex justify-between items-start mb-6">
-                  {featuredGames.find(g => g.id === selectedGame)?.icon && (
-                    <featuredGames.find(g => g.id === selectedGame)!.icon className="h-10 w-10 text-white/90" />
+                  {selectedGameObject?.icon && (
+                    <selectedGameObject.icon className="h-10 w-10 text-white/90" />
                   )}
                   <div className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium text-white">
                     <Users className="h-3 w-3 inline mr-1" />
-                    {featuredGames.find(g => g.id === selectedGame)?.players} jwè
+                    {selectedGameObject?.players} jwè
                   </div>
                 </div>
                 
@@ -257,7 +263,7 @@ const GamblingSection = () => {
                       <div className="text-center">
                         <h4 className="text-xl font-bold mb-2">Mete Bet Ou</h4>
                         <p className="text-white/80 text-sm">
-                          Min: ${featuredGames.find(g => g.id === selectedGame)?.minBet} | 
+                          Min: ${selectedGameObject?.minBet} | 
                           Max: $100
                         </p>
                       </div>
