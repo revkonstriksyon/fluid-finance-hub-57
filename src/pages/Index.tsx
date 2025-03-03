@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import BankSection from '@/components/dashboard/BankSection';
 import CreditSection from '@/components/dashboard/CreditSection';
-import GamblingSection from '@/components/dashboard/GamblingSection';
+import GamblingSection from '@/components/dashboard/gambling/GamblingSection';
 import TradingSection from '@/components/dashboard/TradingSection';
 import AccountSection from '@/components/dashboard/AccountSection';
 
