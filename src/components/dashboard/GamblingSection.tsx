@@ -1,5 +1,5 @@
 
-import { Dice, Trophy, Users, DollarSign, Clock } from 'lucide-react';
+import { Dice1, Trophy, Users, DollarSign, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 const GamblingSection = () => {
@@ -10,7 +10,7 @@ const GamblingSection = () => {
       name: "Lucky Spins", 
       type: "Slot Machine", 
       minBet: 5, 
-      icon: Dice, 
+      icon: Dice1, 
       bgColor: "bg-gradient-to-br from-purple-600 to-blue-500", 
       players: 245
     },
@@ -19,7 +19,7 @@ const GamblingSection = () => {
       name: "Blackjack Pro", 
       type: "Card Game", 
       minBet: 10, 
-      icon: Dice, 
+      icon: Dice1, 
       bgColor: "bg-gradient-to-br from-green-600 to-teal-500", 
       players: 189
     },
@@ -28,7 +28,7 @@ const GamblingSection = () => {
       name: "Crypto Dice", 
       type: "Dice Game", 
       minBet: 2, 
-      icon: Dice, 
+      icon: Dice1, 
       bgColor: "bg-gradient-to-br from-amber-500 to-orange-500", 
       players: 312
     },

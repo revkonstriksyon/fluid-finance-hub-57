@@ -1,5 +1,4 @@
-
-import { User, MessageSquare, Bell, Settings, Shield, Lock, CreditCard, LogOut, Plus } from 'lucide-react';
+import { User, MessageSquare, Bell, Settings, Shield, Lock, CreditCard, LogOut, Plus, BarChart2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -216,7 +215,7 @@ const AccountSection = () => {
                   <div className="flex justify-between items-center p-3 border-b border-finance-midGray/30 dark:border-white/10">
                     <div className="flex items-center gap-3">
                       <div className="bg-finance-gold/20 p-2 rounded-lg">
-                        <BarChart3 className="h-5 w-5 text-finance-gold" />
+                        <BarChart2 className="h-5 w-5 text-finance-gold" />
                       </div>
                       <div>
                         <p className="font-medium">Envestisman</p>
