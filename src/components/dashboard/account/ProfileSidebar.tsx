@@ -1,6 +1,7 @@
 
 import { User, MessageSquare, Bell, Settings, Shield, Lock, CreditCard, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
 
 interface ProfileSidebarProps {
   userData: {
@@ -14,14 +15,14 @@ interface ProfileSidebarProps {
 }
 
 const accountNavItems = [
-  { icon: User, label: "Pwofil" },
-  { icon: MessageSquare, label: "Mesaj" },
-  { icon: Bell, label: "Notifikasyon" },
-  { icon: Settings, label: "Paramèt" },
-  { icon: Shield, label: "Sekirite" },
-  { icon: Lock, label: "Konfidansyalite" },
-  { icon: CreditCard, label: "Metòd Peman" },
-  { icon: LogOut, label: "Dekonekte" },
+  { icon: User, label: "Pwofil", path: "/profile" },
+  { icon: MessageSquare, label: "Mesaj", path: "/messages" },
+  { icon: Bell, label: "Notifikasyon", path: "/" },
+  { icon: Settings, label: "Paramèt", path: "/settings" },
+  { icon: Shield, label: "Sekirite", path: "/security" },
+  { icon: Lock, label: "Konfidansyalite", path: "/privacy" },
+  { icon: CreditCard, label: "Metòd Peman", path: "/payment-methods" },
+  { icon: LogOut, label: "Dekonekte", path: "/" },
 ];
 
 const ProfileSidebar = ({ userData }: ProfileSidebarProps) => {
@@ -54,13 +55,14 @@ const ProfileSidebar = ({ userData }: ProfileSidebarProps) => {
       
       <div className="space-y-2">
         {accountNavItems.map((item, index) => (
-          <button
+          <Link
             key={index}
+            to={item.path}
             className="flex items-center w-full space-x-3 px-4 py-3 rounded-lg font-medium transition-colors hover:bg-finance-lightGray/50 dark:hover:bg-white/5 text-finance-charcoal dark:text-white/80"
           >
             <item.icon className="h-5 w-5" />
             <span>{item.label}</span>
-          </button>
+          </Link>
         ))}
       </div>
     </div>
