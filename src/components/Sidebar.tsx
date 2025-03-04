@@ -1,8 +1,9 @@
 
-import { Home, CreditCard, Banknote, BarChart3, User, DollarSign, GamepadIcon, X } from 'lucide-react';
+import { Home, CreditCard, Banknote, BarChart3, User, DollarSign, GamepadIcon, X, LogOut } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
+  const { signOut } = useAuth();
+  
   const menuItems = [
     { icon: Banknote, label: 'My Bank', path: '/', active: true },
     { icon: CreditCard, label: 'Kredi', path: '/' },
@@ -17,6 +20,10 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
     { icon: BarChart3, label: 'Trading & Bous', path: '/trading' },
     { icon: User, label: 'Mon Compte', path: '/profile' },
   ];
+
+  const handleLogout = async () => {
+    await signOut();
+  };
 
   return (
     <div 
@@ -51,6 +58,14 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
             <span>{item.label}</span>
           </Link>
         ))}
+
+        <button
+          onClick={handleLogout}
+          className="flex items-center w-full space-x-3 px-4 py-3 rounded-lg font-medium transition-colors text-finance-charcoal dark:text-white/80 hover:bg-finance-midGray/20 dark:hover:bg-white/10"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>Dekonekte</span>
+        </button>
       </nav>
     </div>
   );

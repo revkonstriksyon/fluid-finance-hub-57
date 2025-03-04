@@ -1,342 +1,305 @@
 
 import { useState } from "react";
-import { Shield, Key, Smartphone, AlertCircle, Lock, ToggleLeft, Check, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, LockKeyhole, Smartphone, AlertTriangle, Check, X } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 const SecuritySettings = () => {
   const { toast } = useToast();
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [tradingPINEnabled, setTradingPINEnabled] = useState(false);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [notifications, setNotifications] = useState(true);
+  const [phoneNumber, setPhoneNumber] = useState("+509 38XX-XXXX");
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
+  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
+  const [loginNotificationsEnabled, setLoginNotificationsEnabled] = useState(true);
+  const [transactionNotificationsEnabled, setTransactionNotificationsEnabled] = useState(true);
+  const [isChangingPhone, setIsChangingPhone] = useState(false);
+  const [newPhoneNumber, setNewPhoneNumber] = useState("");
   
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (newPassword !== confirmPassword) {
+  const handleSavePhone = () => {
+    if (!newPhoneNumber) {
       toast({
         title: "Erè",
-        description: "Nouvo modpas la ak konfirmasyon an pa menm.",
-        variant: "destructive",
+        description: "Tanpri antre yon nimewo telefòn ki valid",
+        variant: "destructive"
       });
       return;
     }
     
-    // In a real app, this would call an API to change the password
+    setPhoneNumber(newPhoneNumber);
+    setIsChangingPhone(false);
+    setNewPhoneNumber("");
+    
     toast({
       title: "Siksè",
-      description: "Modpas ou chanje avèk siksè.",
-      variant: "default",
+      description: "Nimewo telefòn ou a mizajou",
+      variant: "default"
     });
-    
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
   };
   
   const handleToggleTwoFactor = () => {
-    const newValue = !twoFactorEnabled;
-    setTwoFactorEnabled(newValue);
+    const newState = !twoFactorEnabled;
+    setTwoFactorEnabled(newState);
     
     toast({
-      title: newValue ? "2FA Aktive" : "2FA Dezaktive",
-      description: newValue 
-        ? "Otantifikasyon de-faktè aktive sou kont ou." 
-        : "Otantifikasyon de-faktè dezaktive sou kont ou. Nou rekòmande ou aktive li pou plis sekirite.",
-      variant: newValue ? "default" : "destructive",
+      title: newState ? "2FA Aktive" : "2FA Dezaktive",
+      description: newState ? 
+        "Otantifikasyon de-faktè aktive avèk siksè." : 
+        "Otantifikasyon de-faktè dezaktive. Kont ou mwens sekirize kounye a.",
+      variant: newState ? "default" : "destructive"
     });
   };
   
-  const handleSetupTradingPIN = () => {
-    setTradingPINEnabled(true);
-    
+  const handleResetSecurity = () => {
     toast({
-      title: "PIN Komès Aktive",
-      description: "PIN sekirite pou tranzaksyon aktive sou kont ou.",
+      title: "Demand Reyinisyalizasyon Sekirite",
+      description: "Nou voye yon imel ba ou ak enstriksyon pou reyinisyalize paramèt sekirite ou yo.",
     });
   };
   
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Sekirite Kont</CardTitle>
-          <CardDescription>Jere paramèt sekirite pou kont Trading ou a</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <Key className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">Modpas ak PIN</CardTitle>
-                    <CardDescription>Jere kredansyèl koneksyon ou yo</CardDescription>
-                  </div>
+      <div>
+        <h2 className="text-2xl font-bold mb-1">Paramèt Sekirite</h2>
+        <p className="text-muted-foreground">Jere paramèt sekirite kont ou an</p>
+      </div>
+      
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList className="grid grid-cols-3 mb-6">
+          <TabsTrigger value="general">Jeneral</TabsTrigger>
+          <TabsTrigger value="authentication">Otantifikasyon</TabsTrigger>
+          <TabsTrigger value="sessions">Sesyon</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="general" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Shield className="mr-2 h-5 w-5 text-finance-blue" />
+                Sekirite Debaz
+              </CardTitle>
+              <CardDescription>
+                Paramèt sekirite jeneral pou kont ou
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="font-medium">Notifikasyon pou koneksyon</h4>
+                  <p className="text-sm text-muted-foreground">Resevwa notifikasyon lè yon moun konekte nan kont ou</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="change-password">
-                    <AccordionTrigger>Chanje Modpas</AccordionTrigger>
-                    <AccordionContent>
-                      <form onSubmit={handleChangePassword} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="current-password">Modpas Aktyèl</Label>
-                          <Input 
-                            id="current-password" 
-                            type="password" 
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            required
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="new-password">Nouvo Modpas</Label>
-                          <Input 
-                            id="new-password" 
-                            type="password" 
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            required
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm-password">Konfime Nouvo Modpas</Label>
-                          <Input 
-                            id="confirm-password" 
-                            type="password" 
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                          />
-                        </div>
-                        
-                        <Button type="submit">Mete Ajou Modpas</Button>
-                      </form>
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="trading-pin">
-                    <AccordionTrigger>PIN Tranzaksyon</AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium">PIN Tranzaksyon</h4>
-                            <p className="text-sm text-muted-foreground">Egzije yon PIN pou tout tranzaksyon trading</p>
-                          </div>
-                          <Switch 
-                            checked={tradingPINEnabled}
-                            onCheckedChange={setTradingPINEnabled}
-                          />
-                        </div>
-                        
-                        {!tradingPINEnabled && (
-                          <Button onClick={handleSetupTradingPIN}>Konfigire PIN</Button>
-                        )}
-                        
-                        {tradingPINEnabled && (
-                          <div className="space-y-2">
-                            <Label htmlFor="trading-limit">Limit Tranzaksyon San PIN</Label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                              <Input 
-                                id="trading-limit" 
-                                type="number" 
-                                defaultValue="0"
-                                className="pl-8"
-                              />
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Mete $0 pou egzije PIN pou tout tranzaksyon
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <Smartphone className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">Otantifikasyon De-faktè</CardTitle>
-                    <CardDescription>Sékirite siplemantè pou kont ou</CardDescription>
-                  </div>
+                <Switch 
+                  checked={loginNotificationsEnabled} 
+                  onCheckedChange={setLoginNotificationsEnabled} 
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="font-medium">Notifikasyon pou tranzaksyon</h4>
+                  <p className="text-sm text-muted-foreground">Resevwa notifikasyon pou tout tranzaksyon ki depase 100$</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">2FA pou Koneksyon</h4>
-                      <p className="text-sm text-muted-foreground">Egzije kòd 2FA chak fwa ou konekte</p>
-                    </div>
-                    <Switch 
-                      checked={twoFactorEnabled}
-                      onCheckedChange={handleToggleTwoFactor}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">2FA pou Tranzaksyon</h4>
-                      <p className="text-sm text-muted-foreground">Egzije kòd 2FA pou tout acha/vant</p>
-                    </div>
-                    <Switch 
-                      checked={twoFactorEnabled}
-                      onCheckedChange={handleToggleTwoFactor}
-                      disabled={!twoFactorEnabled}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Otantifikasyon Biyometrik</h4>
-                      <p className="text-sm text-muted-foreground">Itilize Touch ID oswa Face ID sou aparèy ki pèmèt li</p>
-                    </div>
-                    <Switch 
-                      checked={biometricEnabled}
-                      onCheckedChange={setBiometricEnabled}
-                    />
-                  </div>
-                  
-                  {!twoFactorEnabled && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start">
-                      <AlertCircle className="h-5 w-5 text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-amber-800">
-                        <p className="font-medium mb-1">Sekirite ba</p>
-                        <p>Nou rekòmande anpil pou aktive otantifikasyon de-faktè pou ede pwoteje kont ou.</p>
-                      </div>
-                    </div>
-                  )}
+                <Switch 
+                  checked={transactionNotificationsEnabled} 
+                  onCheckedChange={setTransactionNotificationsEnabled} 
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="font-medium">Otantifikasyon biyometrik</h4>
+                  <p className="text-sm text-muted-foreground">Aktive koneksyon ak anprent oswa rekonesans figi (sèlman aplikasyon mobil)</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <Switch 
+                  checked={biometricsEnabled} 
+                  onCheckedChange={setBiometricsEnabled} 
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={handleResetSecurity}>
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Reyinisyalize Paramèt
+              </Button>
+              <Button>
+                <Check className="mr-2 h-4 w-4" />
+                Anrejistre Chanjman
+              </Button>
+            </CardFooter>
+          </Card>
           
           <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center space-x-3">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <Shield className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Sekirite Avanse</CardTitle>
-                  <CardDescription>Paramèt sekirite adisyonèl</CardDescription>
-                </div>
-              </div>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Smartphone className="mr-2 h-5 w-5 text-finance-blue" />
+                Nimewo Telefòn
+              </CardTitle>
+              <CardDescription>
+                Nimewo telefòn pou koneksyon ak otantifikasyon de-faktè
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Notifikasyon Aktivite Sispèk</h4>
-                    <p className="text-sm text-muted-foreground">Resevwa alèt pou aktivite ki sispèk sou kont ou</p>
+              {isChangingPhone ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber">Nouvo nimewo telefòn</Label>
+                    <Input 
+                      id="phoneNumber" 
+                      value={newPhoneNumber} 
+                      onChange={(e) => setNewPhoneNumber(e.target.value)} 
+                      placeholder="+509 XXXX-XXXX" 
+                    />
                   </div>
-                  <Switch 
-                    checked={notifications}
-                    onCheckedChange={setNotifications}
-                  />
                 </div>
-                
+              ) : (
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Konesans Aparèy</h4>
-                    <p className="text-sm text-muted-foreground">Verifye nouvo aparèy lè yo konekte pou premye fwa</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Bloke Koneksyon Entènasyonal</h4>
-                    <p className="text-sm text-muted-foreground">Bloke koneksyon ki soti nan peyi ki pa sa w te defini</p>
-                  </div>
-                  <Switch />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Otorizasyon pou App Twazyèm Pati</h4>
-                    <p className="text-sm text-muted-foreground">Egzije otorizasyon pou konekte ak app twazyèm pati</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="pt-4 border-t">
-                  <h4 className="font-medium mb-2">Aparèy Konekte</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-green-100 p-2 rounded-full">
-                          <Smartphone className="h-4 w-4 text-green-600" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium">iPhone 13 Pro</div>
-                          <div className="text-xs text-muted-foreground">Port-au-Prince, Haiti · Dènye koneksyon: Jodi a</div>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-100 text-green-800 flex items-center">
-                        <Check className="h-3 w-3 mr-1" />
-                        Aktyèl
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-slate-100 p-2 rounded-full">
-                          <Lock className="h-4 w-4 text-slate-600" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium">MacBook Pro</div>
-                          <div className="text-xs text-muted-foreground">Port-au-Prince, Haiti · Dènye koneksyon: Yè</div>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                        <X className="h-3 w-3 mr-1" />
-                        Dekonekte
-                      </Button>
+                  <div className="flex items-center space-x-4">
+                    <Smartphone className="h-8 w-8 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{phoneNumber}</p>
+                      <p className="text-sm text-muted-foreground">Itilize pou otantifikasyon de-faktè</p>
                     </div>
                   </div>
+                  <Badge>Verifye</Badge>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              {isChangingPhone ? (
+                <div className="space-x-2">
+                  <Button variant="outline" onClick={() => setIsChangingPhone(false)}>
+                    <X className="mr-2 h-4 w-4" />
+                    Anile
+                  </Button>
+                  <Button onClick={handleSavePhone}>
+                    <Check className="mr-2 h-4 w-4" />
+                    Anrejistre
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="outline" onClick={() => setIsChangingPhone(true)}>
+                  Chanje
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="authentication" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <LockKeyhole className="mr-2 h-5 w-5 text-finance-blue" />
+                Otantifikasyon de-faktè (2FA)
+              </CardTitle>
+              <CardDescription>
+                Ajoute yon kouch sekirite siplemantè pou kont ou
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h4 className="font-medium">Estati 2FA</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {twoFactorEnabled 
+                      ? "Otantifikasyon de-faktè aktif. Nou voye kòd verifikasyon nan telefòn ou chak fwa ou konekte." 
+                      : "Otantifikasyon de-faktè pa aktif. Kont ou pi vilnerab a atak."}
+                  </p>
+                </div>
+                <Badge 
+                  className={twoFactorEnabled ? "bg-green-500" : "bg-red-500"}
+                >
+                  {twoFactorEnabled ? "Aktif" : "Pa aktif"}
+                </Badge>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                className="w-full" 
+                variant={twoFactorEnabled ? "outline" : "default"}
+                onClick={handleToggleTwoFactor}
+              >
+                {twoFactorEnabled ? "Dezaktive 2FA" : "Aktive 2FA"}
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Modpas & Sekirite</CardTitle>
+              <CardDescription>
+                Jere modpas ou ak paramèt sekirite kont ou
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Dènye chanjman modpas</h4>
+                  <span className="text-sm text-muted-foreground">3 mwa pase</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Fòs modpas</h4>
+                  <Badge className="bg-yellow-500">Mwayen</Badge>
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="border-t pt-6">
-              <div className="flex items-start text-sm text-muted-foreground">
-                <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <p>Sekirite kont ou se yon priyorite. Nou rekòmande pou aktive otantifikasyon de-faktè epi itilize yon modpas ki fò, inik pou pwoteje kont ou.</p>
-              </div>
+            <CardFooter>
+              <Button className="w-full">
+                Chanje Modpas
+              </Button>
             </CardFooter>
           </Card>
-        </CardContent>
-      </Card>
+        </TabsContent>
+        
+        <TabsContent value="sessions" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Aparèy & Sesyon</CardTitle>
+              <CardDescription>
+                Jere aparèy ki konekte nan kont ou
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-4 border-b dark:border-gray-800">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-finance-blue/10 p-2 rounded-full">
+                      <Smartphone className="h-6 w-6 text-finance-blue" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">iPhone 13 Pro</h4>
+                      <p className="text-sm text-muted-foreground">Port-au-Prince, Haiti • Kounye a</p>
+                    </div>
+                  </div>
+                  <Badge>Aktyèl</Badge>
+                </div>
+                
+                <div className="flex items-center justify-between pb-4 border-b dark:border-gray-800">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-finance-blue/10 p-2 rounded-full">
+                      <LockKeyhole className="h-6 w-6 text-finance-blue" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">MacBook Pro</h4>
+                      <p className="text-sm text-muted-foreground">Port-au-Prince, Haiti • 2 jou pase</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline">Dekonekte</Button>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button variant="destructive" className="w-full">
+                Dekonekte Tout Aparèy
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
