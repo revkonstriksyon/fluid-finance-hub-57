@@ -2,6 +2,7 @@
 import { Home, CreditCard, Banknote, BarChart3, User, DollarSign, GamepadIcon, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,11 +11,11 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
   const menuItems = [
-    { icon: Banknote, label: 'My Bank', active: true },
-    { icon: CreditCard, label: 'Kredi' },
-    { icon: GamepadIcon, label: 'Jeu & Pari' },
-    { icon: BarChart3, label: 'Trading & Bous' },
-    { icon: User, label: 'Mon Compte' },
+    { icon: Banknote, label: 'My Bank', path: '/', active: true },
+    { icon: CreditCard, label: 'Kredi', path: '/' },
+    { icon: GamepadIcon, label: 'Jeu & Pari', path: '/' },
+    { icon: BarChart3, label: 'Trading & Bous', path: '/trading' },
+    { icon: User, label: 'Mon Compte', path: '/profile' },
   ];
 
   return (
@@ -36,8 +37,9 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
       
       <nav className="p-4 space-y-2">
         {menuItems.map((item, index) => (
-          <button
+          <Link
             key={index}
+            to={item.path}
             className={cn(
               "flex items-center w-full space-x-3 px-4 py-3 rounded-lg font-medium transition-colors",
               item.active 
@@ -47,7 +49,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
           >
             <item.icon className="h-5 w-5" />
             <span>{item.label}</span>
-          </button>
+          </Link>
         ))}
       </nav>
     </div>

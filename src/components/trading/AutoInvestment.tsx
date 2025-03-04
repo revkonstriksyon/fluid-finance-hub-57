@@ -10,11 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { useToast } from "@/hooks/use-toast";
 
 const AutoInvestment = () => {
+  const { toast } = useToast();
   const [riskLevel, setRiskLevel] = useState(5);
   const [investmentAmount, setInvestmentAmount] = useState(1000);
   const [investmentFrequency, setInvestmentFrequency] = useState("monthly");
+  const [autoInvestActive, setAutoInvestActive] = useState(false);
   
   // Sample portfolio allocation based on risk level
   const getAllocation = () => {
@@ -35,6 +38,17 @@ const AutoInvestment = () => {
   const allocation = getAllocation();
   
   const COLORS = ['#4285F4', '#34A853', '#FBBC05', '#EA4335'];
+
+  const handleActivateAutoInvest = () => {
+    setAutoInvestActive(!autoInvestActive);
+    
+    toast({
+      title: autoInvestActive ? "Envestisman Otomatik Dezaktive" : "Envestisman Otomatik Aktive",
+      description: autoInvestActive 
+        ? "Ou te dezaktive envestisman otomatik sou kont ou."
+        : `Envestisman otomatik aktive. N'ap envesti $${investmentAmount} ${investmentFrequency === "weekly" ? "chak semèn" : investmentFrequency === "biweekly" ? "chak 2 semèn" : "chak mwa"}.`,
+    });
+  };
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -106,7 +120,13 @@ const AutoInvestment = () => {
             </div>
           </div>
           
-          <Button className="w-full">Aktive Envestisman Otomatik</Button>
+          <Button 
+            className="w-full" 
+            onClick={handleActivateAutoInvest}
+            variant={autoInvestActive ? "destructive" : "default"}
+          >
+            {autoInvestActive ? "Dezaktive Envestisman Otomatik" : "Aktive Envestisman Otomatik"}
+          </Button>
         </CardContent>
       </Card>
       

@@ -1,71 +1,74 @@
 
-import { useState } from 'react';
-import Layout from '@/components/Layout';
+import { useState } from "react";
+import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import PortfolioDashboard from '@/components/trading/PortfolioDashboard';
-import StockTrading from '@/components/trading/StockTrading';
-import Watchlist from '@/components/trading/Watchlist';
-import MarketAnalysis from '@/components/trading/MarketAnalysis';
-import AutoInvestment from '@/components/trading/AutoInvestment';
-import ETFBonds from '@/components/trading/ETFBonds';
-import TransactionHistory from '@/components/trading/TransactionHistory';
-import Education from '@/components/trading/Education';
-import SecuritySettings from '@/components/trading/SecuritySettings';
+import PortfolioDashboard from "@/components/trading/PortfolioDashboard";
+import StockTrading from "@/components/trading/StockTrading";
+import Watchlist from "@/components/trading/Watchlist";
+import MarketAnalysis from "@/components/trading/MarketAnalysis";
+import AutoInvestment from "@/components/trading/AutoInvestment";
+import ETFBonds from "@/components/trading/ETFBonds";
+import TransactionHistory from "@/components/trading/TransactionHistory";
+import Education from "@/components/trading/Education";
+import SecuritySettings from "@/components/trading/SecuritySettings";
 
 const TradingPage = () => {
   const [activeTab, setActiveTab] = useState("portfolio");
   
   return (
     <Layout>
-      <div className="w-full max-w-6xl mx-auto py-6 animate-fade-in">
-        <h1 className="text-2xl font-bold mb-6">Trading & Bous 📈</h1>
+      <div className="container py-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Trading & Bous</h1>
+          <p className="text-muted-foreground">Jere envestisman ou yo epi swiv mache a</p>
+        </div>
         
-        <Tabs defaultValue="portfolio" onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-9 w-full mb-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-3 md:grid-cols-9 mb-6">
             <TabsTrigger value="portfolio">Pòtfolyo</TabsTrigger>
             <TabsTrigger value="trade">Achte/Vann</TabsTrigger>
             <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
-            <TabsTrigger value="analysis">Analiz Mache</TabsTrigger>
+            <TabsTrigger value="analysis">Analiz</TabsTrigger>
             <TabsTrigger value="autoinvest">Robo-Advisor</TabsTrigger>
             <TabsTrigger value="etfbonds">ETF & Obligasyon</TabsTrigger>
-            <TabsTrigger value="history">Rapò & Istorik</TabsTrigger>
+            <TabsTrigger value="history">Istwa</TabsTrigger>
             <TabsTrigger value="education">Edikasyon</TabsTrigger>
             <TabsTrigger value="security">Sekirite</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="portfolio">
+          <TabsContent value="portfolio" className="space-y-4">
             <PortfolioDashboard />
           </TabsContent>
           
-          <TabsContent value="trade">
+          <TabsContent value="trade" className="space-y-4">
             <StockTrading />
           </TabsContent>
           
-          <TabsContent value="watchlist">
+          <TabsContent value="watchlist" className="space-y-4">
             <Watchlist />
           </TabsContent>
           
-          <TabsContent value="analysis">
+          <TabsContent value="analysis" className="space-y-4">
             <MarketAnalysis />
           </TabsContent>
           
-          <TabsContent value="autoinvest">
+          <TabsContent value="autoinvest" className="space-y-4">
             <AutoInvestment />
           </TabsContent>
           
-          <TabsContent value="etfbonds">
+          <TabsContent value="etfbonds" className="space-y-4">
             <ETFBonds />
           </TabsContent>
           
-          <TabsContent value="history">
+          <TabsContent value="history" className="space-y-4">
             <TransactionHistory />
           </TabsContent>
           
-          <TabsContent value="education">
+          <TabsContent value="education" className="space-y-4">
             <Education />
           </TabsContent>
           
-          <TabsContent value="security">
+          <TabsContent value="security" className="space-y-4">
             <SecuritySettings />
           </TabsContent>
         </Tabs>

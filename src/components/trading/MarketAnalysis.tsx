@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, BarChart, Search } from 'lucide-react';
+import { Search, TrendingUp, Filter, ArrowUp, ArrowDown, Newspaper, BarChart3, Activity } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
@@ -11,446 +11,459 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   AreaChart,
   Area,
-  BarChart as RechartsBarChart,
-  Bar,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip as RechartsTooltip,
+  Tooltip,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
   Legend
 } from 'recharts';
-import { marketNewsData, marketIndicesData } from './tradingData';
 
 const MarketAnalysis = () => {
+  const [selectedTab, setSelectedTab] = useState("charts");
+  const [timeRange, setTimeRange] = useState("1d");
   const [chartType, setChartType] = useState("area");
-  const [timeRange, setTimeRange] = useState("1M");
-  const [selectedIndicator, setSelectedIndicator] = useState("none");
-  const [searchQuery, setSearchQuery] = useState("");
   
-  // Sample chart data
-  const chartData = [
-    { date: "2023-07-01", price: 175.34, volume: 120000, ma20: 173.25, ma50: 170.15, rsi: 62 },
-    { date: "2023-07-02", price: 176.57, volume: 115000, ma20: 173.45, ma50: 170.25, rsi: 65 },
-    { date: "2023-07-03", price: 177.82, volume: 125000, ma20: 173.85, ma50: 170.45, rsi: 68 },
-    { date: "2023-07-04", price: 178.36, volume: 110000, ma20: 174.15, ma50: 170.75, rsi: 70 },
-    { date: "2023-07-05", price: 179.64, volume: 130000, ma20: 174.65, ma50: 171.05, rsi: 72 },
-    { date: "2023-07-06", price: 180.95, volume: 140000, ma20: 175.15, ma50: 171.35, rsi: 75 },
-    { date: "2023-07-07", price: 179.78, volume: 135000, ma20: 175.55, ma50: 171.65, rsi: 71 },
-    { date: "2023-07-08", price: 177.45, volume: 125000, ma20: 175.85, ma50: 171.95, rsi: 68 },
-    { date: "2023-07-09", price: 178.23, volume: 118000, ma20: 176.05, ma50: 172.25, rsi: 65 },
-    { date: "2023-07-10", price: 180.10, volume: 122000, ma20: 176.35, ma50: 172.55, rsi: 67 },
-    { date: "2023-07-11", price: 182.36, volume: 140000, ma20: 176.85, ma50: 172.85, rsi: 70 },
-    { date: "2023-07-12", price: 183.45, volume: 145000, ma20: 177.25, ma50: 173.15, rsi: 73 },
-    { date: "2023-07-13", price: 184.78, volume: 150000, ma20: 177.75, ma50: 173.45, rsi: 76 },
-    { date: "2023-07-14", price: 182.59, volume: 138000, ma20: 178.15, ma50: 173.75, rsi: 73 },
-    { date: "2023-07-15", price: 183.67, volume: 130000, ma20: 178.55, ma50: 174.05, rsi: 74 },
+  // Sample stock data for chart
+  const stockData = [
+    { date: "9:30", price: 152.34, volume: 1200 },
+    { date: "10:00", price: 153.21, volume: 1500 },
+    { date: "10:30", price: 152.85, volume: 1100 },
+    { date: "11:00", price: 153.45, volume: 1800 },
+    { date: "11:30", price: 154.12, volume: 2200 },
+    { date: "12:00", price: 153.89, volume: 1600 },
+    { date: "12:30", price: 154.23, volume: 1400 },
+    { date: "13:00", price: 155.01, volume: 2500 },
+    { date: "13:30", price: 154.87, volume: 1700 },
+    { date: "14:00", price: 155.43, volume: 2100 },
+    { date: "14:30", price: 156.21, volume: 2800 },
+    { date: "15:00", price: 155.98, volume: 2300 },
+    { date: "15:30", price: 156.34, volume: 2600 },
+    { date: "16:00", price: 157.02, volume: 3200 },
   ];
   
-  // Filter news based on search
-  const filteredNews = searchQuery 
-    ? marketNewsData.filter(news => 
-        news.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        news.relatedSymbols.some(symbol => symbol.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : marketNewsData;
-  
-  // Technical indicators description
-  const indicators = [
-    { id: "none", name: "Okenn", description: "Grafik pri de baz san okenn endikatè teknik." },
-    { id: "ma", name: "Mwayèn Mobile", description: "Montre tandans pri sou yon peryòd tan espesifik (20 ak 50 jou)." },
-    { id: "rsi", name: "RSI (Relative Strength Index)", description: "Mezire vitès ak chanjman mouvman pri pou idantifye kondisyon sipò-achte oswa sipò-vann." },
-    { id: "macd", name: "MACD", description: "Montre relasyon ant de mwayèn mobil pri, itilize pou jwenn tandans ak chanjman momantòm." },
-    { id: "bollinger", name: "Bollinger Bands", description: "Montre volatilite pri ak nivo potansyèl sipò/rezistans." },
+  // Sample market sentiment data
+  const sentimentData = [
+    { name: "Pozitif", value: 55 },
+    { name: "Nèt", value: 30 },
+    { name: "Negatif", value: 15 },
   ];
+
+  // Sample trending stocks
+  const trendingStocks = [
+    { symbol: "AAPL", name: "Apple Inc.", change: 1.25, price: 175.34 },
+    { symbol: "TSLA", name: "Tesla Inc.", change: -2.1, price: 244.88 },
+    { symbol: "MSFT", name: "Microsoft Corp.", change: 0.85, price: 315.23 },
+    { symbol: "NVDA", name: "NVIDIA Corp.", change: 3.45, price: 422.67 },
+    { symbol: "AMZN", name: "Amazon.com Inc.", change: -0.32, price: 132.45 },
+  ];
+  
+  // Sample market news
+  const marketNews = [
+    { 
+      id: 1, 
+      title: "Fed Anonse Nouvo To Enterè", 
+      source: "Finance Today", 
+      time: "2 èdtan pase", 
+      snippet: "Rezerv Federal anonse chanjman nan to enterè ki kapab afekte mache a...",
+      tags: ["Makroekonomi", "Fed"]
+    },
+    { 
+      id: 2, 
+      title: "AAPL Lanse Nouvo Pwodui", 
+      source: "Tech News", 
+      time: "6 èdtan pase", 
+      snippet: "Apple anonse dènye iPhone li a jodi a, ak plizyè amelyorasyon sou kamera...",
+      tags: ["Teknoloji", "Apple"]
+    },
+    { 
+      id: 3, 
+      title: "Yo Prevwa Resesyon nan 2024", 
+      source: "Economic Times", 
+      time: "1 jou pase", 
+      snippet: "Ekonomis yo prevwa yon resesyon posib nan premye mwatye 2024 la...",
+      tags: ["Ekonomi", "Resesyon"]
+    },
+    { 
+      id: 4, 
+      title: "Kriz Enèji Kontinye nan Ewòp", 
+      source: "Global Markets", 
+      time: "2 jou pase", 
+      snippet: "Pri enèji yo kontinye monte pandan Ewòp ap fè fas ak defi apwovizyònman...",
+      tags: ["Enèji", "Ewòp"]
+    },
+  ];
+  
+  // Colors for sentiment pie chart
+  const COLORS = ['#22c55e', '#60a5fa', '#ef4444'];
   
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <CardTitle>AAPL - Apple Inc.</CardTitle>
-                  <CardDescription>NASDAQ: AAPL - USD</CardDescription>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle>Analiz Mache</CardTitle>
+              <CardDescription>Etidye tandans mache a ak done aksyon</CardDescription>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Input 
+                placeholder="Chèche yon aksyon..." 
+                className="w-full md:w-auto"
+                prefix={<Search className="h-4 w-4 mr-2 text-muted-foreground" />}
+              />
+              <Button variant="outline" size="icon">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+            <TabsList className="grid grid-cols-2 w-full mb-6">
+              <TabsTrigger value="charts">Graf</TabsTrigger>
+              <TabsTrigger value="news">Nouvèl ak Tandans</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="charts" className="space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <div className="flex space-x-2">
+                  <Button 
+                    variant={timeRange === "1d" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setTimeRange("1d")}
+                  >
+                    1J
+                  </Button>
+                  <Button 
+                    variant={timeRange === "1w" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setTimeRange("1w")}
+                  >
+                    1S
+                  </Button>
+                  <Button 
+                    variant={timeRange === "1m" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setTimeRange("1m")}
+                  >
+                    1M
+                  </Button>
+                  <Button 
+                    variant={timeRange === "3m" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setTimeRange("3m")}
+                  >
+                    3M
+                  </Button>
+                  <Button 
+                    variant={timeRange === "1y" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setTimeRange("1y")}
+                  >
+                    1A
+                  </Button>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="text-2xl font-bold">$183.67</div>
-                  <div className="flex items-center text-green-600">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    <span>+1.08 (+0.59%)</span>
-                  </div>
+                
+                <div className="flex space-x-2">
+                  <Button 
+                    variant={chartType === "area" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setChartType("area")}
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    Liy
+                  </Button>
+                  <Button 
+                    variant={chartType === "bar" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setChartType("bar")}
+                  >
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Kolòn
+                  </Button>
                 </div>
               </div>
               
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Button
-                  variant={timeRange === "1D" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange("1D")}
-                >
-                  1D
-                </Button>
-                <Button
-                  variant={timeRange === "1W" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange("1W")}
-                >
-                  1S
-                </Button>
-                <Button
-                  variant={timeRange === "1M" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange("1M")}
-                >
-                  1M
-                </Button>
-                <Button
-                  variant={timeRange === "3M" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange("3M")}
-                >
-                  3M
-                </Button>
-                <Button
-                  variant={timeRange === "6M" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange("6M")}
-                >
-                  6M
-                </Button>
-                <Button
-                  variant={timeRange === "1Y" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange("1Y")}
-                >
-                  1A
-                </Button>
-                <Button
-                  variant={timeRange === "5Y" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeRange("5Y")}
-                >
-                  5A
-                </Button>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Button
-                  variant={chartType === "area" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setChartType("area")}
-                >
-                  <BarChart className="h-4 w-4 mr-2" />
-                  Area
-                </Button>
-                <Button
-                  variant={chartType === "line" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setChartType("line")}
-                >
-                  <BarChart className="h-4 w-4 mr-2" />
-                  Line
-                </Button>
-                <Button
-                  variant={chartType === "candlestick" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setChartType("candlestick")}
-                >
-                  <BarChart className="h-4 w-4 mr-2" />
-                  Candlestick
-                </Button>
-                <select 
-                  className="h-9 px-3 rounded-md border border-input bg-background text-sm"
-                  value={selectedIndicator}
-                  onChange={(e) => setSelectedIndicator(e.target.value)}
-                >
-                  {indicators.map(indicator => (
-                    <option key={indicator.id} value={indicator.id}>
-                      {indicator.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  {chartType === "area" && (
-                    <AreaChart
-                      data={chartData}
-                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#4285F4" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#4285F4" stopOpacity={0} />
-                        </linearGradient>
-                        {selectedIndicator === "ma" && (
-                          <>
-                            <linearGradient id="colorMA20" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#34A853" stopOpacity={0.8} />
-                              <stop offset="95%" stopColor="#34A853" stopOpacity={0} />
-                            </linearGradient>
-                            <linearGradient id="colorMA50" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#FBBC05" stopOpacity={0.8} />
-                              <stop offset="95%" stopColor="#FBBC05" stopOpacity={0} />
-                            </linearGradient>
-                          </>
-                        )}
-                      </defs>
-                      <XAxis dataKey="date" tickLine={false} axisLine={false} />
-                      <YAxis tickLine={false} axisLine={false} domain={['dataMin', 'dataMax']} />
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <RechartsTooltip />
-                      <Area
-                        type="monotone"
-                        dataKey="price"
-                        stroke="#4285F4"
-                        fillOpacity={1}
-                        fill="url(#colorPrice)"
-                        name="Pri"
-                      />
-                      {selectedIndicator === "ma" && (
-                        <>
-                          <Area
-                            type="monotone"
-                            dataKey="ma20"
-                            stroke="#34A853"
-                            fill="none"
-                            name="MA 20"
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="ma50"
-                            stroke="#FBBC05"
-                            fill="none"
-                            name="MA 50"
-                          />
-                        </>
-                      )}
-                      {selectedIndicator === "rsi" && (
-                        <Area
-                          type="monotone"
-                          dataKey="rsi"
-                          stroke="#EA4335"
-                          fill="none"
-                          name="RSI"
-                          yAxisId={1}
-                        />
-                      )}
-                      <Legend />
-                    </AreaChart>
-                  )}
-                  
-                  {chartType === "line" && (
-                    <LineChart
-                      data={chartData}
-                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                    >
-                      <XAxis dataKey="date" tickLine={false} axisLine={false} />
-                      <YAxis tickLine={false} axisLine={false} domain={['dataMin', 'dataMax']} />
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <RechartsTooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="price"
-                        stroke="#4285F4"
-                        name="Pri"
-                        dot={false}
-                      />
-                      {selectedIndicator === "ma" && (
-                        <>
-                          <Line
-                            type="monotone"
-                            dataKey="ma20"
-                            stroke="#34A853"
-                            name="MA 20"
-                            dot={false}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="ma50"
-                            stroke="#FBBC05"
-                            name="MA 50"
-                            dot={false}
-                          />
-                        </>
-                      )}
-                      {selectedIndicator === "rsi" && (
-                        <Line
-                          type="monotone"
-                          dataKey="rsi"
-                          stroke="#EA4335"
-                          name="RSI"
-                          yAxisId={1}
-                          dot={false}
-                        />
-                      )}
-                      <Legend />
-                    </LineChart>
-                  )}
-                  
-                  {chartType === "candlestick" && (
-                    <RechartsBarChart
-                      data={chartData}
-                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                    >
-                      <XAxis dataKey="date" tickLine={false} axisLine={false} />
-                      <YAxis tickLine={false} axisLine={false} />
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <RechartsTooltip />
-                      <Bar dataKey="price" fill="#4285F4" name="Pri" />
-                      <Bar dataKey="volume" fill="#FBBC05" name="Volim" />
-                      <Legend />
-                    </RechartsBarChart>
-                  )}
-                </ResponsiveContainer>
-              </div>
-              
-              <div className="mt-4 text-sm text-muted-foreground">
-                {selectedIndicator !== "none" && (
-                  <div className="bg-muted p-3 rounded-md">
-                    <h4 className="font-medium mb-1">
-                      {indicators.find(i => i.id === selectedIndicator)?.name}
-                    </h4>
-                    <p>{indicators.find(i => i.id === selectedIndicator)?.description}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Done Fondamantal</CardTitle>
-              <CardDescription>Enfòmasyon finansye kle Apple Inc.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Kapitalizasyon Mache</div>
-                  <div className="font-medium">$2.87T</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">P/E Ratio</div>
-                  <div className="font-medium">31.52</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Dividend Yield</div>
-                  <div className="font-medium">0.51%</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">52-Week Range</div>
-                  <div className="font-medium">$138.62 - $198.23</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">EPS</div>
-                  <div className="font-medium">$5.83</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Beta</div>
-                  <div className="font-medium">1.27</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Volume Mwayèn (3m)</div>
-                  <div className="font-medium">56.3M</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">Volim Jodi a</div>
-                  <div className="font-medium">42.8M</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div>
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Endèks Mache</CardTitle>
-              <CardDescription>Done ki ajou an tan reyèl</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {marketIndicesData.map((index) => (
-                  <div key={index.id} className="flex justify-between items-center border-b pb-3 last:border-0 last:pb-0">
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium">{index.name}</div>
+                      <CardTitle>AAPL - Apple Inc.</CardTitle>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-2xl font-bold">$157.02</span>
+                        <Badge className="bg-green-100 text-green-800">
+                          <ArrowUp className="h-3 w-3 mr-1" />
+                          3.1%
+                        </Badge>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">{index.value.toLocaleString()}</div>
-                      <div className={`text-xs flex items-center justify-end ${index.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {index.change >= 0 ? (
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3 mr-1" />
-                        )}
-                        <span>
-                          {index.change >= 0 ? '+' : ''}{index.change.toFixed(2)} ({index.change >= 0 ? '+' : ''}{index.changePercent.toFixed(2)}%)
-                        </span>
-                      </div>
+                      <div className="text-sm text-muted-foreground">Volim Jounalye</div>
+                      <div>2.34M</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <span>Nouvèl Mache</span>
-                <div className="relative w-48">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Chèche nouvèl..."
-                    className="h-9 pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredNews.length === 0 ? (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <p>Pa gen nouvèl ki matche rechèch ou a.</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      {chartType === "area" ? (
+                        <AreaChart
+                          data={stockData}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <XAxis dataKey="date" />
+                          <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                          <Tooltip />
+                          <Area
+                            type="monotone"
+                            dataKey="price"
+                            stroke="#3b82f6"
+                            fillOpacity={1}
+                            fill="url(#colorPrice)"
+                          />
+                        </AreaChart>
+                      ) : (
+                        <BarChart
+                          data={stockData}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                          <XAxis dataKey="date" />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="volume" fill="#3b82f6" />
+                        </BarChart>
+                      )}
+                    </ResponsiveContainer>
                   </div>
-                ) : (
-                  filteredNews.map((news) => (
-                    <div key={news.id} className="border-b pb-4 last:border-0 last:pb-0">
-                      <a href={news.url} className="font-medium hover:text-blue-600">{news.title}</a>
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <span>{news.source}</span>
-                        <span>{news.time}</span>
+                </CardContent>
+              </Card>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Analiz Teknik</CardTitle>
+                    <CardDescription>Endikatè ak siyal teknik</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center pb-2 border-b border-border">
+                        <span>RSI (14)</span>
+                        <div className="flex items-center">
+                          <span className="font-medium">62.5</span>
+                          <Badge className="ml-2 bg-yellow-100 text-yellow-800">Nèt</Badge>
+                        </div>
                       </div>
-                      <p className="text-sm mt-2">{news.summary}</p>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {news.relatedSymbols.map((symbol) => (
-                          <span 
-                            key={symbol} 
-                            className="bg-muted px-2 py-0.5 rounded-full text-xs"
+                      <div className="flex justify-between items-center pb-2 border-b border-border">
+                        <span>MACD (12,26,9)</span>
+                        <div className="flex items-center">
+                          <span className="font-medium">1.89</span>
+                          <Badge className="ml-2 bg-green-100 text-green-800">Achte</Badge>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b border-border">
+                        <span>Bollinger Bands</span>
+                        <div className="flex items-center">
+                          <span className="font-medium">Upper</span>
+                          <Badge className="ml-2 bg-red-100 text-red-800">Vann</Badge>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b border-border">
+                        <span>Moving Avg (50)</span>
+                        <div className="flex items-center">
+                          <span className="font-medium">152.34</span>
+                          <Badge className="ml-2 bg-green-100 text-green-800">Achte</Badge>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Moving Avg (200)</span>
+                        <div className="flex items-center">
+                          <span className="font-medium">145.67</span>
+                          <Badge className="ml-2 bg-green-100 text-green-800">Achte</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Santiman Mache</CardTitle>
+                    <CardDescription>Analiz santiman envèstisè</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-52">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={sentimentData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                           >
-                            {symbol}
-                          </span>
-                        ))}
-                      </div>
+                            {sentimentData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
-                  ))
-                )}
+                    <div className="text-center mt-2 text-sm text-muted-foreground">
+                      55% envèstisè yo pozitif sou AAPL
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </TabsContent>
+            
+            <TabsContent value="news" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Aksyon Popilè</CardTitle>
+                    <CardDescription>Aksyon ki gen anpil aktivite jodi a</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {trendingStocks.map((stock, index) => (
+                        <div key={index} className="flex justify-between items-center pb-2 border-b border-border last:border-0 last:pb-0">
+                          <div>
+                            <div className="font-medium">{stock.symbol}</div>
+                            <div className="text-sm text-muted-foreground">{stock.name}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">${stock.price}</div>
+                            <div className={`text-sm ${stock.change >= 0 ? 'text-green-600' : 'text-red-600'} flex items-center justify-end`}>
+                              {stock.change >= 0 ? (
+                                <>
+                                  <ArrowUp className="h-3 w-3 mr-1" />
+                                  +{stock.change}%
+                                </>
+                              ) : (
+                                <>
+                                  <ArrowDown className="h-3 w-3 mr-1" />
+                                  {stock.change}%
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Nouvèl Mache</CardTitle>
+                    <CardDescription>Dènye nouvèl ak devlopman</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {marketNews.map((news) => (
+                        <div key={news.id} className="border-b border-border pb-3 last:border-0 last:pb-0">
+                          <h4 className="font-medium mb-1">{news.title}</h4>
+                          <p className="text-sm text-muted-foreground mb-2">{news.snippet}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs text-muted-foreground">
+                              {news.source} · {news.time}
+                            </div>
+                            <div className="flex space-x-1">
+                              {news.tags.map((tag, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div>
+                    <CardTitle>Evènman Mache</CardTitle>
+                    <CardDescription>Kalandriye evènman ekonomik</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Newspaper className="h-4 w-4 mr-2" />
+                    Tout Evènman
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between border-b pb-2 border-border">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-12 w-12 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center">
+                          <span className="text-sm font-medium">25</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Rapò To Enterè Fed</h4>
+                          <div className="text-sm text-muted-foreground">2:00 PM ET</div>
+                        </div>
+                      </div>
+                      <Badge>Enpòtan</Badge>
+                    </div>
+                    
+                    <div className="flex justify-between border-b pb-2 border-border">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-12 w-12 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center">
+                          <span className="text-sm font-medium">26</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Rapò Travay ADP</h4>
+                          <div className="text-sm text-muted-foreground">8:30 AM ET</div>
+                        </div>
+                      </div>
+                      <Badge variant="outline">Mwayen</Badge>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-12 w-12 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center">
+                          <span className="text-sm font-medium">27</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Rezilta AAPL Q3</h4>
+                          <div className="text-sm text-muted-foreground">4:30 PM ET</div>
+                        </div>
+                      </div>
+                      <Badge>Enpòtan</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
