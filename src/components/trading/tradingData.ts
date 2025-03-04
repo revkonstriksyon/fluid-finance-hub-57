@@ -206,21 +206,21 @@ export const marketIndicesData: MarketIndex[] = [
   {
     id: 1,
     name: "S&P 500",
-    value: 4,783.35,
+    value: 4783.35,
     change: 25.50,
     changePercent: 0.54
   },
   {
     id: 2,
     name: "NASDAQ",
-    value: 15,145.78,
+    value: 15145.78,
     change: 110.45,
     changePercent: 0.73
   },
   {
     id: 3,
     name: "DOW",
-    value: 37,625.15,
+    value: 37625.15,
     change: -42.80,
     changePercent: -0.11
   },

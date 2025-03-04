@@ -12,6 +12,7 @@ import SettingsPage from "./pages/profile/SettingsPage";
 import SecurityPage from "./pages/profile/SecurityPage";
 import PrivacyPage from "./pages/profile/PrivacyPage";
 import PaymentMethodsPage from "./pages/profile/PaymentMethodsPage";
+import TradingPage from "./pages/trading/TradingPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/security" element={<SecurityPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/payment-methods" element={<PaymentMethodsPage />} />
+          <Route path="/trading" element={<TradingPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
