@@ -4,10 +4,33 @@ import { supabase, signInWithPhone, verifyOTP, signInWithGoogle } from '@/lib/su
 import { Session, User } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
 
+// Define types for user profile and bank account
+interface Profile {
+  id: string;
+  full_name: string;
+  username: string;
+  avatar_url: string | null;
+  phone: string | null;
+  location: string | null;
+  bio: string | null;
+  joined_date: string;
+}
+
+interface BankAccount {
+  id: string;
+  account_name: string;
+  account_number: string;
+  balance: number;
+  currency: string;
+}
+
 type AuthContextType = {
   session: Session | null;
   user: User | null;
+  profile: Profile | null;
+  bankAccounts: BankAccount[];
   loading: boolean;
+  userLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -15,6 +38,7 @@ type AuthContextType = {
   signInWithPhoneNumber: (phone: string) => Promise<{ error: any | null }>;
   verifyPhoneOTP: (phone: string, token: string) => Promise<{ error: any | null, user: User | null }>;
   signInWithGoogleAccount: () => Promise<{ error: any | null }>;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,14 +46,67 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userLoading, setUserLoading] = useState(true);
   const { toast } = useToast();
+
+  // Fetch user profile data
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      setUserLoading(true);
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return;
+      }
+
+      setProfile(profileData as Profile);
+
+      // Fetch bank accounts
+      const { data: accountsData, error: accountsError } = await supabase
+        .from('bank_accounts')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (accountsError) {
+        console.error('Error fetching bank accounts:', accountsError);
+        return;
+      }
+
+      setBankAccounts(accountsData as BankAccount[]);
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  // Refresh profile data
+  const refreshProfile = async () => {
+    if (user?.id) {
+      await fetchUserProfile(user.id);
+    }
+  };
 
   useEffect(() => {
     // Get session on initial load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setUserLoading(false);
+      }
+      
       setLoading(false);
     });
 
@@ -37,6 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setBankAccounts([]);
+        setUserLoading(false);
+      }
+      
       setLoading(false);
     });
 
@@ -215,14 +301,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{ 
       session, 
       user, 
+      profile,
+      bankAccounts,
       loading, 
+      userLoading,
       signIn, 
       signUp, 
       signOut, 
       resetPassword,
       signInWithPhoneNumber,
       verifyPhoneOTP,
-      signInWithGoogleAccount
+      signInWithGoogleAccount,
+      refreshProfile
     }}>
       {children}
     </AuthContext.Provider>
