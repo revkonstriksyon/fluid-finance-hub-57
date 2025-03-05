@@ -30,6 +30,13 @@ export interface Conversation {
   };
 }
 
+export interface FriendProfile {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+}
+
 export interface Friend {
   id: string;
   user_id: string;
@@ -37,17 +44,7 @@ export interface Friend {
   status: "pending" | "accepted" | "rejected";
   created_at: string;
   updated_at: string;
-  friend?: {
-    id: string;
-    full_name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-  } | {
-    id: string;
-    full_name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-  }[];
+  friend?: FriendProfile | FriendProfile[];
 }
 
 export interface UserSearchResult {

@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessaging } from "@/hooks/useMessaging";
-import { Friend, UserSearchResult } from "@/types/messaging";
+import { Friend, UserSearchResult, FriendProfile } from "@/types/messaging";
 import { Loader2 } from "lucide-react";
 
 const FriendsTab = () => {
@@ -24,6 +24,26 @@ const FriendsTab = () => {
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [userSearchResults, setUserSearchResults] = useState<UserSearchResult[]>([]);
   const [loadingUserSearch, setLoadingUserSearch] = useState(false);
+
+  // Helper function to get friend profile data safely
+  const getFriendProfile = (friend: Friend): FriendProfile => {
+    if (!friend.friend) {
+      return {
+        id: friend.friend_id,
+        full_name: null,
+        username: null,
+        avatar_url: null
+      };
+    }
+    
+    // Handle case where friend is an array
+    if (Array.isArray(friend.friend)) {
+      return friend.friend[0];
+    }
+    
+    // Handle case where friend is an object
+    return friend.friend;
+  };
 
   // Fetch friends and friend requests when component mounts
   useEffect(() => {
@@ -87,7 +107,7 @@ const FriendsTab = () => {
       
       // Process friends data to ensure the friend property has the other user's info
       const processedFriends = friendsData.map(friend => {
-        // Handle case where friend is returned as an array instead of a single object
+        // Get friend profile data safely
         const friendProfile = Array.isArray(friend.friend) ? friend.friend[0] : friend.friend;
         
         // If the current user is the friend_id, swap the friend property to show the user info
@@ -464,33 +484,36 @@ const FriendsTab = () => {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-4">
-                {friends.map((friend) => (
-                  <div key={friend.id} className="flex items-center p-3 border border-finance-midGray/30 dark:border-white/10 rounded-lg hover:bg-finance-lightGray/50 dark:hover:bg-white/5 transition-colors">
-                    <Avatar className="h-12 w-12 mr-4">
-                      <AvatarImage src={friend.friend?.avatar_url || ""} />
-                      <AvatarFallback className="bg-finance-blue text-white">
-                        {friend.friend?.full_name 
-                          ? friend.friend.full_name.split(' ').map(n => n[0]).join('')
-                          : "??"}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1">
-                      <p className="font-medium">{friend.friend?.full_name || "Zanmi"}</p>
-                      <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
-                        @{friend.friend?.username || "username"}
-                      </p>
+                {friends.map((friend) => {
+                  const friendProfile = getFriendProfile(friend);
+                  return (
+                    <div key={friend.id} className="flex items-center p-3 border border-finance-midGray/30 dark:border-white/10 rounded-lg hover:bg-finance-lightGray/50 dark:hover:bg-white/5 transition-colors">
+                      <Avatar className="h-12 w-12 mr-4">
+                        <AvatarImage src={friendProfile?.avatar_url || ""} />
+                        <AvatarFallback className="bg-finance-blue text-white">
+                          {friendProfile?.full_name 
+                            ? friendProfile.full_name.split(' ').map(n => n[0]).join('')
+                            : "??"}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1">
+                        <p className="font-medium">{friendProfile?.full_name || "Zanmi"}</p>
+                        <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
+                          @{friendProfile?.username || "username"}
+                        </p>
+                      </div>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => startConversation(friendProfile?.id || "")}
+                      >
+                        <MessageSquare className="h-5 w-5" />
+                      </Button>
                     </div>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => startConversation(friend.friend?.id || "")}
-                    >
-                      <MessageSquare className="h-5 w-5" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -511,46 +534,49 @@ const FriendsTab = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {friendRequests.map((request) => (
-                  <div key={request.id} className="flex items-center p-3 border border-finance-midGray/30 dark:border-white/10 rounded-lg">
-                    <Avatar className="h-12 w-12 mr-4">
-                      <AvatarImage src={request.friend?.avatar_url || ""} />
-                      <AvatarFallback className="bg-finance-blue text-white">
-                        {request.friend?.full_name 
-                          ? request.friend.full_name.split(' ').map(n => n[0]).join('')
-                          : "??"}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1">
-                      <p className="font-medium">{request.friend?.full_name || "Itilizatè"}</p>
-                      <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
-                        @{request.friend?.username || "username"}
-                      </p>
+                {friendRequests.map((request) => {
+                  const friendProfile = getFriendProfile(request);
+                  return (
+                    <div key={request.id} className="flex items-center p-3 border border-finance-midGray/30 dark:border-white/10 rounded-lg">
+                      <Avatar className="h-12 w-12 mr-4">
+                        <AvatarImage src={friendProfile?.avatar_url || ""} />
+                        <AvatarFallback className="bg-finance-blue text-white">
+                          {friendProfile?.full_name 
+                            ? friendProfile.full_name.split(' ').map(n => n[0]).join('')
+                            : "??"}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1">
+                        <p className="font-medium">{friendProfile?.full_name || "Itilizatè"}</p>
+                        <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
+                          @{friendProfile?.username || "username"}
+                        </p>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => acceptFriendRequest(request.id)}
+                          className="border-green-500 text-green-500 hover:bg-green-500/10"
+                        >
+                          <Check className="h-4 w-4 mr-2" />
+                          Aksepte
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => rejectFriendRequest(request.id)}
+                          className="border-red-500 text-red-500 hover:bg-red-500/10"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Rejte
+                        </Button>
+                      </div>
                     </div>
-                    
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => acceptFriendRequest(request.id)}
-                        className="border-green-500 text-green-500 hover:bg-green-500/10"
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        Aksepte
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => rejectFriendRequest(request.id)}
-                        className="border-red-500 text-red-500 hover:bg-red-500/10"
-                      >
-                        <X className="h-4 w-4 mr-2" />
-                        Rejte
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>
