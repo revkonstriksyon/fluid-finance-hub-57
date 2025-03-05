@@ -6,7 +6,7 @@ export const createBankAccount = async (userId: string, values: AccountFormValue
   // Generate a random account number
   const accountNumber = `ACCT-${Math.floor(Math.random() * 90000) + 10000}`;
   
-  // 1. Create the new bank account
+  // 1. Create the new bank account with 0 balance by default
   const { data: accountData, error: accountError } = await supabase
     .from('bank_accounts')
     .insert({
@@ -14,7 +14,7 @@ export const createBankAccount = async (userId: string, values: AccountFormValue
       account_name: values.accountName,
       account_type: values.accountType,
       account_number: accountNumber,
-      balance: values.initialDeposit,
+      balance: values.initialDeposit || 0, // Use initialDeposit if provided, otherwise 0
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
