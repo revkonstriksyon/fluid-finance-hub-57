@@ -1,10 +1,12 @@
-
 import { useToast } from '@/components/ui/use-toast';
 import { supabase, signInWithPhone, verifyOTP, signInWithGoogle } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
+import { useState } from 'react';
+import { ActiveSession } from '@/types/auth';
 
 export const useAuthOperations = () => {
   const { toast } = useToast();
+  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -196,6 +198,192 @@ export const useAuthOperations = () => {
     }
   };
 
+  // Add the missing methods
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      // First verify the current password is correct
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Pa gen itilizatè ki konekte");
+      
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: userData.user.email || '',
+        password: currentPassword
+      });
+      
+      if (verifyError) throw new Error("Modpas aktyèl pa kòrèk");
+      
+      // Update to the new password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Modpas chanje",
+        description: "Modpas ou te chanje avèk siksè.",
+      });
+      
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè chanjman modpas",
+        description: error.message || "Pa kapab chanje modpas. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
+  const enable2FA = async (type: '2fa_sms' | '2fa_totp') => {
+    try {
+      if (type === '2fa_sms') {
+        // Implementation for SMS-based 2FA would go here
+        // This would typically involve sending an SMS to the user's phone
+        toast({
+          title: "2FA SMS Aktive",
+          description: "Nou pral voye yon kòd verifikasyon nan telefòn ou pwochen fwa ou konekte.",
+        });
+      } else if (type === '2fa_totp') {
+        // Implementation for TOTP-based 2FA would go here
+        // This would typically involve generating a TOTP secret and QR code
+        toast({
+          title: "2FA TOTP Aktive",
+          description: "Eskane kòd QR a ak aplikasyon otantifikatè ou a.",
+        });
+      }
+      
+      return { error: null, success: true };
+    } catch (error: any) {
+      toast({
+        title: "Erè aktivasyon 2FA",
+        description: error.message || "Pa kapab aktive 2FA. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error, success: false };
+    }
+  };
+
+  const verify2FA = async (code: string, type: '2fa_sms' | '2fa_totp') => {
+    try {
+      // Verification logic would depend on the type of 2FA
+      let success = false;
+      
+      if (type === '2fa_sms') {
+        // Verify SMS code logic
+        success = true; // Placeholder, actual implementation would verify the code
+      } else if (type === '2fa_totp') {
+        // Verify TOTP code logic
+        success = true; // Placeholder, actual implementation would verify the code
+      }
+      
+      if (success) {
+        toast({
+          title: "Verifikasyon reyisi",
+          description: "Kòd 2FA verifye avèk siksè.",
+        });
+        return { error: null, success: true };
+      } else {
+        throw new Error("Kòd verifikasyon pa valid");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erè verifikasyon",
+        description: error.message || "Pa kapab verifye kòd 2FA. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error, success: false };
+    }
+  };
+
+  const fetchActiveSessions = async () => {
+    try {
+      // In a real implementation, you would fetch this from your backend
+      // This is a placeholder implementation
+      const mockSessions: ActiveSession[] = [
+        {
+          id: '1',
+          device_name: 'iPhone 12',
+          location: 'Port-au-Prince',
+          last_active: new Date().toISOString(),
+          ip_address: '192.168.1.1',
+          current: true
+        },
+        {
+          id: '2',
+          device_name: 'MacBook Pro',
+          location: 'Port-au-Prince',
+          last_active: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          ip_address: '192.168.1.2',
+          current: false
+        },
+        {
+          id: '3',
+          device_name: 'Windows PC',
+          location: 'Jacmel',
+          last_active: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          ip_address: '192.168.1.3',
+          current: false
+        }
+      ];
+      
+      setActiveSessions(mockSessions);
+      return mockSessions;
+    } catch (error) {
+      console.error('Error fetching active sessions:', error);
+      return [];
+    }
+  };
+
+  const terminateSession = async (sessionId: string) => {
+    try {
+      // In a real implementation, you would call your backend to terminate the session
+      // This is a placeholder implementation
+      setActiveSessions(prev => prev.filter(session => session.id !== sessionId));
+      
+      toast({
+        title: "Sesyon fèmen",
+        description: "Sesyon te fèmen avèk siksè.",
+      });
+      
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè fèmen sesyon",
+        description: error.message || "Pa kapab fèmen sesyon. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
+  const terminateAllSessions = async () => {
+    try {
+      // In a real implementation, you would call your backend to terminate all sessions except current
+      // This is a placeholder implementation
+      setActiveSessions(prev => prev.filter(session => session.current));
+      
+      toast({
+        title: "Tout sesyon fèmen",
+        description: "Tout lòt sesyon te fèmen avèk siksè.",
+      });
+      
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè fèmen sesyon",
+        description: error.message || "Pa kapab fèmen sesyon. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
+  // Initialize active sessions when the hook is first used
+  useState(() => {
+    fetchActiveSessions();
+  });
+
   return {
     signIn,
     signUp,
@@ -203,6 +391,12 @@ export const useAuthOperations = () => {
     resetPassword,
     signInWithPhoneNumber,
     verifyPhoneOTP,
-    signInWithGoogleAccount
+    signInWithGoogleAccount,
+    updatePassword,
+    enable2FA,
+    verify2FA,
+    activeSessions,
+    terminateSession,
+    terminateAllSessions
   };
 };

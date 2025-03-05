@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
-import { AuthContextType } from '@/types/auth';
+import { AuthContextType, ActiveSession } from '@/types/auth';
 import { useProfileData } from '@/hooks/useProfileData';
 import { useAuthOperations } from '@/hooks/useAuthOperations';
 
@@ -25,7 +25,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Wrapper for refresh profile to use with the current user
   const refreshProfile = async () => {
-    await refreshUserProfile(user?.id);
+    if (user?.id) {
+      await refreshUserProfile(user.id);
+    }
   };
 
   useEffect(() => {
@@ -56,17 +58,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Combine the auth operations with our state
+  const contextValue: AuthContextType = {
+    session,
+    user,
+    profile,
+    bankAccounts,
+    loading,
+    userLoading,
+    refreshProfile,
+    ...authOperations
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      session, 
-      user, 
-      profile,
-      bankAccounts,
-      loading, 
-      userLoading,
-      ...authOperations,
-      refreshProfile
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
