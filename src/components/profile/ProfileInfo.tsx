@@ -2,8 +2,9 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import VerificationBadge from "./VerificationBadge";
-import { Card, CardContent } from "@/components/ui/card";
-import { PencilIcon, PhoneIcon, MapPinIcon, CalendarIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PencilIcon, PhoneIcon, MapPinIcon, CalendarIcon, MailIcon, UserIcon } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
   const { profile, user } = useAuth();
@@ -19,101 +20,112 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
       })
     : '';
 
+  // Helper to display profile info item
+  const InfoItem = ({ 
+    icon: Icon, 
+    label, 
+    value, 
+    showEditButton = false 
+  }: { 
+    icon: React.ComponentType<any>; 
+    label: string; 
+    value?: string; 
+    showEditButton?: boolean;
+  }) => (
+    <div className="flex items-center justify-between py-2">
+      <div className="flex items-center space-x-2">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium">{label}:</span>
+        <span className="text-sm">{value || <span className="text-muted-foreground italic">Pa ranpli</span>}</span>
+      </div>
+      {showEditButton && onEdit && (
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onEdit}>
+          <PencilIcon className="h-3.5 w-3.5" />
+        </Button>
+      )}
+    </div>
+  );
+
   return (
-    <>
-      <div className="finance-card p-6 mb-6">
-        <div className="flex flex-col items-center">
-          <div className="w-24 h-24 bg-finance-blue rounded-full mb-4 flex items-center justify-center text-white text-2xl relative group">
-            {profile?.avatar_url ? (
-              <img 
-                src={profile.avatar_url} 
-                alt={profile?.full_name || 'Profile'} 
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              profile?.full_name ? profile.full_name.split(' ').map(n => n[0]).join('') : 'U'
-            )}
+    <div className="space-y-6">
+      <Card className="finance-card">
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center">
+            <Avatar className="h-24 w-24 mb-4">
+              {profile?.avatar_url ? (
+                <AvatarImage 
+                  src={profile.avatar_url} 
+                  alt={profile?.full_name || 'Profile'} 
+                />
+              ) : (
+                <AvatarFallback className="bg-finance-blue text-white text-2xl">
+                  {profile?.full_name ? profile.full_name.split(' ').map(n => n[0]).join('') : 'U'}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            
+            <h3 className="text-xl font-bold mb-1">{profile?.full_name || 'Itilizatè'}</h3>
+            <p className="text-sm text-finance-charcoal/70 dark:text-white/70 mb-3">
+              @{profile?.username || 'username'}
+            </p>
             
             {onEdit && (
-              <div className="absolute inset-0 bg-black bg-opacity-40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <PencilIcon className="h-8 w-8 text-white cursor-pointer" onClick={onEdit} />
-              </div>
+              <Button variant="outline" className="w-full" onClick={onEdit}>
+                <PencilIcon className="h-4 w-4 mr-2" />
+                Chanje Foto
+              </Button>
             )}
           </div>
-          
-          {onEdit ? (
-            <Button variant="outline" className="w-full mb-2" onClick={onEdit}>Chanje Foto</Button>
-          ) : (
-            <h3 className="text-xl font-bold mb-2">{profile?.full_name || 'Itilizatè'}</h3>
-          )}
-          
-          <p className="text-xs text-finance-charcoal/70 dark:text-white/70">
-            {onEdit ? 'JPG, PNG oswa GIF (max 2MB)' : '@' + (profile?.username || 'username')}
-          </p>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="finance-card p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-medium">Enfòmasyon Pèsonèl</h3>
+      <Card className="finance-card">
+        <CardHeader className="flex flex-row items-center justify-between py-4">
+          <CardTitle className="text-lg">Enfòmasyon Pèsonèl</CardTitle>
           {isEmailVerified && <VerificationBadge isVerified={true} verifiedType="email" />}
-        </div>
+        </CardHeader>
         
-        <div className="space-y-4">
-          {profile?.full_name && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="font-medium">Non Konplè:</span>
-                <span>{profile.full_name}</span>
-              </div>
-              {onEdit && <PencilIcon className="h-4 w-4 cursor-pointer" onClick={onEdit} />}
-            </div>
-          )}
-          
-          {user?.email && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="font-medium">Imèl:</span>
-                <span>{user.email}</span>
-              </div>
-            </div>
-          )}
-          
-          {profile?.phone && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <PhoneIcon className="h-4 w-4" />
-                <span className="font-medium">Telefòn:</span>
-                <span>{profile.phone}</span>
-              </div>
-              {onEdit && <PencilIcon className="h-4 w-4 cursor-pointer" onClick={onEdit} />}
-            </div>
-          )}
-          
-          {profile?.location && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <MapPinIcon className="h-4 w-4" />
-                <span className="font-medium">Lokasyon:</span>
-                <span>{profile.location}</span>
-              </div>
-              {onEdit && <PencilIcon className="h-4 w-4 cursor-pointer" onClick={onEdit} />}
-            </div>
-          )}
-          
-          {profile?.joined_date && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <CalendarIcon className="h-4 w-4" />
-                <span className="font-medium">Manm depi:</span>
-                <span>{joinedDate}</span>
-              </div>
-            </div>
-          )}
-        </div>
+        <CardContent className="py-2">
+          <div className="divide-y">
+            <InfoItem 
+              icon={UserIcon} 
+              label="Non Konplè" 
+              value={profile?.full_name}
+            />
+            
+            <InfoItem 
+              icon={MailIcon} 
+              label="Imèl" 
+              value={user?.email}
+            />
+            
+            <InfoItem 
+              icon={PhoneIcon} 
+              label="Telefòn" 
+              value={profile?.phone}
+            />
+            
+            <InfoItem 
+              icon={MapPinIcon} 
+              label="Lokasyon" 
+              value={profile?.location}
+            />
+            
+            <InfoItem 
+              icon={CalendarIcon} 
+              label="Manm depi" 
+              value={joinedDate}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="finance-card">
+        <CardHeader className="py-4">
+          <CardTitle className="text-lg">Aktivite Pwofil</CardTitle>
+        </CardHeader>
         
-        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <h4 className="font-medium mb-3">Aktivite Pwofil</h4>
+        <CardContent className="py-2">
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
               <span>Dènye koneksyon</span>
@@ -128,9 +140,9 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
               <span className="font-semibold">720</span>
             </div>
           </div>
-        </div>
-      </div>
-    </>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
