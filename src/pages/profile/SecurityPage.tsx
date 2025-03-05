@@ -1,318 +1,299 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, LockKeyhole, Smartphone, AlertTriangle, Check, X } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/contexts/auth";
+import { Input } from "@/components/ui/input";
+import { 
+  Dialog, DialogContent, DialogDescription, DialogFooter, 
+  DialogHeader, DialogTitle, DialogTrigger 
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Shield, Smartphone, Key, Fingerprint, Lock } from "lucide-react";
 
-const SecuritySettings = () => {
+const SecurityPage = () => {
   const { toast } = useToast();
-  const [phoneNumber, setPhoneNumber] = useState("+509 38XX-XXXX");
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
-  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
-  const [loginNotificationsEnabled, setLoginNotificationsEnabled] = useState(true);
-  const [transactionNotificationsEnabled, setTransactionNotificationsEnabled] = useState(true);
-  const [isChangingPhone, setIsChangingPhone] = useState(false);
-  const [newPhoneNumber, setNewPhoneNumber] = useState("");
-  const { user, getActiveSessions, getAuthActivity, activeSessions, authActivities } = useAuth();
-  
-  useEffect(() => {
-    // Load sessions and activity data when component mounts
-    if (user) {
-      getActiveSessions?.();
-      // Convert the number 10 to a string for the limit parameter
-      getAuthActivity?.(user.id, "10");
-    }
-  }, [user, getActiveSessions, getAuthActivity]);
-  
-  const handleSavePhone = () => {
-    if (!newPhoneNumber) {
-      toast({
-        title: "Erè",
-        description: "Tanpri antre yon nimewo telefòn ki valid",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setPhoneNumber(newPhoneNumber);
-    setIsChangingPhone(false);
-    setNewPhoneNumber("");
-    
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
     toast({
-      title: "Siksè",
-      description: "Nimewo telefòn ou a mizajou",
-      variant: "default"
+      title: "Modpas Chanje",
+      description: "Modpas ou te chanje avèk siksè",
     });
   };
-  
-  const handleToggleTwoFactor = () => {
-    const newState = !twoFactorEnabled;
-    setTwoFactorEnabled(newState);
-    
+
+  const handleEnable2FA = () => {
     toast({
-      title: newState ? "2FA Aktive" : "2FA Dezaktive",
-      description: newState ? 
-        "Otantifikasyon de-faktè aktive avèk siksè." : 
-        "Otantifikasyon de-faktè dezaktive. Kont ou mwens sekirize kounye a.",
-      variant: newState ? "default" : "destructive"
+      title: "2FA Aktive",
+      description: "Otantifikasyon de-faktè aktive avèk siksè",
     });
   };
-  
-  const handleResetSecurity = () => {
-    toast({
-      title: "Demand Reyinisyalizasyon Sekirite",
-      description: "Nou voye yon imel ba ou ak enstriksyon pou reyinisyalize paramèt sekirite ou yo.",
-    });
-  };
-  
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-1">Paramèt Sekirite</h2>
-        <p className="text-muted-foreground">Jere paramèt sekirite kont ou an</p>
-      </div>
-      
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid grid-cols-3 mb-6">
-          <TabsTrigger value="general">Jeneral</TabsTrigger>
-          <TabsTrigger value="authentication">Otantifikasyon</TabsTrigger>
-          <TabsTrigger value="sessions">Sesyon</TabsTrigger>
-        </TabsList>
+    <Layout>
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">Sekirite</h1>
         
-        <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Shield className="mr-2 h-5 w-5 text-finance-blue" />
-                Sekirite Debaz
-              </CardTitle>
-              <CardDescription>
-                Paramèt sekirite jeneral pou kont ou
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h4 className="font-medium">Notifikasyon pou koneksyon</h4>
-                  <p className="text-sm text-muted-foreground">Resevwa notifikasyon lè yon moun konekte nan kont ou</p>
-                </div>
-                <Switch 
-                  checked={loginNotificationsEnabled} 
-                  onCheckedChange={setLoginNotificationsEnabled} 
-                />
+        <div className="space-y-6">
+          {/* Password Section */}
+          <div className="finance-card p-6">
+            <div className="flex items-start mb-4">
+              <Key className="h-6 w-6 mr-3 text-finance-blue" />
+              <div>
+                <h2 className="text-xl font-bold">Modpas</h2>
+                <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Jere modpas ou epi chanje li regilyèman pou plis sekirite</p>
               </div>
-              
-              <div className="flex justify-between items-center">
-                <div>
-                  <h4 className="font-medium">Notifikasyon pou tranzaksyon</h4>
-                  <p className="text-sm text-muted-foreground">Resevwa notifikasyon pou tout tranzaksyon ki depase 100$</p>
-                </div>
-                <Switch 
-                  checked={transactionNotificationsEnabled} 
-                  onCheckedChange={setTransactionNotificationsEnabled} 
-                />
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div>
-                  <h4 className="font-medium">Otantifikasyon biyometrik</h4>
-                  <p className="text-sm text-muted-foreground">Aktive koneksyon ak anprent oswa rekonesans figi (sèlman aplikasyon mobil)</p>
-                </div>
-                <Switch 
-                  checked={biometricsEnabled} 
-                  onCheckedChange={setBiometricsEnabled} 
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={handleResetSecurity}>
-                <AlertTriangle className="mr-2 h-4 w-4" />
-                Reyinisyalize Paramèt
-              </Button>
-              <Button>
-                <Check className="mr-2 h-4 w-4" />
-                Anrejistre Chanjman
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Smartphone className="mr-2 h-5 w-5 text-finance-blue" />
-                Nimewo Telefòn
-              </CardTitle>
-              <CardDescription>
-                Nimewo telefòn pou koneksyon ak otantifikasyon de-faktè
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isChangingPhone ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phoneNumber">Nouvo nimewo telefòn</Label>
-                    <Input 
-                      id="phoneNumber" 
-                      value={newPhoneNumber} 
-                      onChange={(e) => setNewPhoneNumber(e.target.value)} 
-                      placeholder="+509 XXXX-XXXX" 
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Smartphone className="h-8 w-8 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{phoneNumber}</p>
-                      <p className="text-sm text-muted-foreground">Itilize pou otantifikasyon de-faktè</p>
-                    </div>
-                  </div>
-                  <Badge>Verifye</Badge>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-end">
-              {isChangingPhone ? (
-                <div className="space-x-2">
-                  <Button variant="outline" onClick={() => setIsChangingPhone(false)}>
-                    <X className="mr-2 h-4 w-4" />
-                    Anile
-                  </Button>
-                  <Button onClick={handleSavePhone}>
-                    <Check className="mr-2 h-4 w-4" />
-                    Anrejistre
-                  </Button>
-                </div>
-              ) : (
-                <Button variant="outline" onClick={() => setIsChangingPhone(true)}>
-                  Chanje
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="authentication" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <LockKeyhole className="mr-2 h-5 w-5 text-finance-blue" />
-                Otantifikasyon de-faktè (2FA)
-              </CardTitle>
-              <CardDescription>
-                Ajoute yon kouch sekirite siplemantè pou kont ou
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <h4 className="font-medium">Estati 2FA</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {twoFactorEnabled 
-                      ? "Otantifikasyon de-faktè aktif. Nou voye kòd verifikasyon nan telefòn ou chak fwa ou konekte." 
-                      : "Otantifikasyon de-faktè pa aktif. Kont ou pi vilnerab a atak."}
-                  </p>
-                </div>
-                <Badge 
-                  className={twoFactorEnabled ? "bg-green-500" : "bg-red-500"}
-                >
-                  {twoFactorEnabled ? "Aktif" : "Pa aktif"}
-                </Badge>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                variant={twoFactorEnabled ? "outline" : "default"}
-                onClick={handleToggleTwoFactor}
-              >
-                {twoFactorEnabled ? "Dezaktive 2FA" : "Aktive 2FA"}
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Modpas & Sekirite</CardTitle>
-              <CardDescription>
-                Jere modpas ou ak paramèt sekirite kont ou
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            </div>
+            
+            <form onSubmit={handleChangePassword} className="mt-6 space-y-4">
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium">Dènye chanjman modpas</h4>
-                  <span className="text-sm text-muted-foreground">3 mwa pase</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium">Fòs modpas</h4>
-                  <Badge className="bg-yellow-500">Mwayen</Badge>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">
-                Chanje Modpas
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="sessions" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Aparèy & Sesyon</CardTitle>
-              <CardDescription>
-                Jere aparèy ki konekte nan kont ou
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-4 border-b dark:border-gray-800">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-finance-blue/10 p-2 rounded-full">
-                      <Smartphone className="h-6 w-6 text-finance-blue" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">iPhone 13 Pro</h4>
-                      <p className="text-sm text-muted-foreground">Port-au-Prince, Haiti • Kounye a</p>
-                    </div>
-                  </div>
-                  <Badge>Aktyèl</Badge>
-                </div>
-                
-                <div className="flex items-center justify-between pb-4 border-b dark:border-gray-800">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-finance-blue/10 p-2 rounded-full">
-                      <LockKeyhole className="h-6 w-6 text-finance-blue" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">MacBook Pro</h4>
-                      <p className="text-sm text-muted-foreground">Port-au-Prince, Haiti • 2 jou pase</p>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="outline">Dekonekte</Button>
+                <Label htmlFor="current-password">Modpas Aktyèl</Label>
+                <div className="relative">
+                  <Input 
+                    id="current-password" 
+                    type={showCurrentPassword ? "text" : "password"} 
+                    placeholder="Antre modpas aktyèl ou" 
+                  />
+                  <button 
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-finance-charcoal/70 dark:text-white/70 text-sm"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? "Kache" : "Montre"}
+                  </button>
                 </div>
               </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="destructive" className="w-full">
-                Dekonekte Tout Aparèy
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nouvo Modpas</Label>
+                <div className="relative">
+                  <Input 
+                    id="new-password" 
+                    type={showNewPassword ? "text" : "password"} 
+                    placeholder="Antre nouvo modpas" 
+                  />
+                  <button 
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-finance-charcoal/70 dark:text-white/70 text-sm"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? "Kache" : "Montre"}
+                  </button>
+                </div>
+                <p className="text-xs text-finance-charcoal/70 dark:text-white/70">
+                  Modpas la dwe gen omwen 8 karaktè, ki gen ladan lèt miniskil, lèt majiskil, chif ak karaktè espesyal.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Konfime Nouvo Modpas</Label>
+                <div className="relative">
+                  <Input 
+                    id="confirm-password" 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    placeholder="Konfime nouvo modpas" 
+                  />
+                  <button 
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-finance-charcoal/70 dark:text-white/70 text-sm"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? "Kache" : "Montre"}
+                  </button>
+                </div>
+              </div>
+              
+              <Button type="submit" className="w-full mt-4">Chanje Modpas</Button>
+            </form>
+          </div>
+          
+          {/* 2FA Section */}
+          <div className="finance-card p-6">
+            <div className="flex items-start mb-4">
+              <Smartphone className="h-6 w-6 mr-3 text-finance-blue" />
+              <div>
+                <h2 className="text-xl font-bold">Otantifikasyon De-Faktè (2FA)</h2>
+                <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Ajoute yon kouch sekirite anplis pou kont ou</p>
+              </div>
+            </div>
+            
+            <div className="space-y-6 mt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">SMS 2FA</p>
+                  <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Resevwa kòd otantifikasyon nan telefòn ou</p>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Aktive</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Aktive 2FA pa SMS</DialogTitle>
+                      <DialogDescription>
+                        Antre nimewo telefòn ou pou resevwa kòd otantifikasyon.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="phone-number">Nimewo Telefòn</Label>
+                        <Input id="phone-number" placeholder="+509 ..." />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleEnable2FA}>Konfime</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Aplikasyon Otantifikatè</p>
+                  <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Itilize yon aplikasyon tankou Google Authenticator</p>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Aktive</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Aktive Aplikasyon Otantifikatè</DialogTitle>
+                      <DialogDescription>
+                        Eskane kòd QR la avèk aplikasyon otantifikatè ou a.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-center py-4">
+                      <div className="bg-white p-2 rounded-lg">
+                        <div className="h-48 w-48 bg-gray-200 flex items-center justify-center">
+                          <p className="text-gray-400 text-center">QR Code ta parèt la</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="verification-code">Antre Kòd Verifikasyon</Label>
+                      <Input id="verification-code" placeholder="000000" />
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleEnable2FA}>Verifye epi Aktive</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </div>
+          
+          {/* Biometric Authentication */}
+          <div className="finance-card p-6">
+            <div className="flex items-start mb-4">
+              <Fingerprint className="h-6 w-6 mr-3 text-finance-blue" />
+              <div>
+                <h2 className="text-xl font-bold">Otantifikasyon Byometrik</h2>
+                <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Itilize anprent oswa rekonesans fasyal pou konekte</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between mt-6">
+              <div>
+                <p className="font-medium">Aktive Otantifikasyon Byometrik</p>
+                <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Sa ap travay sèlman sou aparèy ki sipòte li</p>
+              </div>
+              <Switch id="biometric-auth" />
+            </div>
+          </div>
+          
+          {/* Security Alerts */}
+          <div className="finance-card p-6">
+            <div className="flex items-start mb-4">
+              <Shield className="h-6 w-6 mr-3 text-finance-blue" />
+              <div>
+                <h2 className="text-xl font-bold">Alèt Sekirite</h2>
+                <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Jere notifikasyon pou aktivite sispèk yo</p>
+              </div>
+            </div>
+            
+            <div className="space-y-6 mt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Alèt pou Koneksyon Nouvo Aparèy</p>
+                  <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Resevwa notifikasyon lè ou konekte sou yon nouvo aparèy</p>
+                </div>
+                <Switch id="new-device-alerts" defaultChecked />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Alèt pou Chanjman Modpas</p>
+                  <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Resevwa notifikasyon lè modpas ou chanje</p>
+                </div>
+                <Switch id="password-change-alerts" defaultChecked />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Alèt pou Gwo Tranzaksyon</p>
+                  <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Resevwa notifikasyon pou tranzaksyon ki pi gwo pase limit ou</p>
+                </div>
+                <Switch id="large-transaction-alerts" defaultChecked />
+              </div>
+            </div>
+          </div>
+          
+          {/* Active Sessions */}
+          <div className="finance-card p-6">
+            <div className="flex items-start mb-4">
+              <Lock className="h-6 w-6 mr-3 text-finance-blue" />
+              <div>
+                <h2 className="text-xl font-bold">Sesyon Aktif</h2>
+                <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Wè epi jere aparèy ki konekte nan kont ou</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4 mt-6">
+              <div className="p-4 border border-finance-midGray/30 dark:border-white/10 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">iPhone 12 - Port-au-Prince</p>
+                    <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Dènye aktivite: Jodi a, 10:25 AM</p>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                    <span className="text-sm">Aktyèl</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 border border-finance-midGray/30 dark:border-white/10 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">MacBook Pro - Port-au-Prince</p>
+                    <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Dènye aktivite: Yè, 6:30 PM</p>
+                  </div>
+                  <Button variant="outline" size="sm">Fèmen Sesyon</Button>
+                </div>
+              </div>
+              
+              <div className="p-4 border border-finance-midGray/30 dark:border-white/10 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">Windows PC - Jacmel</p>
+                    <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Dènye aktivite: 3 jou pase</p>
+                  </div>
+                  <Button variant="outline" size="sm">Fèmen Sesyon</Button>
+                </div>
+              </div>
+            </div>
+            
+            <Button variant="outline" className="w-full mt-4">Fèmen Tout Lòt Sesyon</Button>
+          </div>
+        </div>
+      </div>
+    </Layout>
   );
 };
 
-export default SecuritySettings;
+export default SecurityPage;

@@ -1,5 +1,6 @@
+
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ProfileInfo = () => {
   const { profile } = useAuth();

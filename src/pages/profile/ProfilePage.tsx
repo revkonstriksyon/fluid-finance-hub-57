@@ -1,15 +1,13 @@
 
 import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
-import { useAuth } from "@/contexts/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileInfo from "@/components/profile/ProfileInfo";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 
 const ProfilePage = () => {
-  const { profile, userLoading, loading, refreshProfile, user } = useAuth();
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const { profile, userLoading } = useAuth();
   
   const [formData, setFormData] = useState({
     full_name: "",
@@ -21,7 +19,7 @@ const ProfilePage = () => {
 
   // Initialize form with profile data once loaded
   useEffect(() => {
-    if (profile && !userLoading && !loading) {
+    if (profile && !userLoading) {
       setFormData({
         full_name: profile.full_name || "",
         username: profile.username || "",
@@ -29,27 +27,11 @@ const ProfilePage = () => {
         bio: profile.bio || "",
         phone: profile.phone || "",
       });
-      setIsInitialized(true);
     }
-  }, [profile, userLoading, loading]);
-
-  // Try to refresh profile if stuck in loading state for too long
-  useEffect(() => {
-    if ((userLoading || loading) && !isInitialized && retryCount < 3) {
-      const timer = setTimeout(() => {
-        console.log(`Profile page still loading, attempt ${retryCount + 1}/3 to refresh...`);
-        if (user) {
-          refreshProfile();
-          setRetryCount(prev => prev + 1);
-        }
-      }, 3000); // Shorter timeout and retry up to 3 times
-      
-      return () => clearTimeout(timer);
-    }
-  }, [userLoading, loading, isInitialized, refreshProfile, retryCount, user]);
+  }, [profile, userLoading]);
 
   // Loading state
-  if ((userLoading || loading) && !profile) {
+  if (userLoading) {
     return (
       <Layout>
         <div className="max-w-4xl mx-auto">

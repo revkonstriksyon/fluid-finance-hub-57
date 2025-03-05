@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuth } from "@/contexts/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -113,8 +114,6 @@ const RegisterPage = () => {
         title: "Kont kreye",
         description: "Ou kapab konekte kounye a avèk nouvo kont ou.",
       });
-      
-      // Redirect to login page after successful account creation
       navigate("/auth/login");
     } catch (error) {
       console.error("Error during registration:", error);
@@ -198,9 +197,7 @@ const RegisterPage = () => {
         }
 
         setIsOtpDialogOpen(false);
-        
-        // Redirect to login page after successful registration
-        navigate("/auth/login");
+        navigate("/");
       } else {
         toast({
           title: "Erè verifikasyon",
