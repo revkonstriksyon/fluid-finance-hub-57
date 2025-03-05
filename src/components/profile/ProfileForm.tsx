@@ -113,6 +113,7 @@ const ProfileForm = ({ initialData, onSaveSuccess }: ProfileFormProps) => {
               size="sm" 
               onClick={() => toggleEdit(name)} 
               className="h-8 px-2"
+              type="button" // Add this to prevent form submission when clicking edit
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -169,6 +170,7 @@ const ProfileForm = ({ initialData, onSaveSuccess }: ProfileFormProps) => {
               size="sm" 
               onClick={() => toggleEdit("bio")} 
               className="h-8 px-2"
+              type="button" // Add this to prevent form submission
             >
               <Pencil className="h-4 w-4" />
             </Button>
