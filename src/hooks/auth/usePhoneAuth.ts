@@ -1,5 +1,4 @@
 
-import { User, Session } from '@supabase/supabase-js';
 import { supabase, signInWithPhone, verifyOTP } from '@/lib/supabase';
 import { useAuthBase } from './useAuthBase';
 
@@ -45,20 +44,15 @@ export const usePhoneAuth = () => {
       if (data?.user) {
         console.log("Creating/updating profile for user:", data.user.id);
         
-        const metadata = {
-          phone: phone,
-          // The previous implementation expected full_name but we're not providing it
-          // We'll get it from user_metadata if available or use a default
-          full_name: data.user.user_metadata?.full_name || 'New User',
-        };
+        const randomUsername = 'user' + Math.floor(Math.random() * 10000);
         
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert([{
             id: data.user.id,
             phone: phone,
-            full_name: metadata.full_name,
-            username: phone.replace(/\D/g, ''),
+            full_name: data.user.user_metadata?.full_name || 'New User',
+            username: phone.replace(/\D/g, '') || randomUsername,
             joined_date: new Date().toISOString()
           }], { onConflict: 'id' });
         

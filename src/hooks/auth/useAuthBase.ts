@@ -30,7 +30,7 @@ export const useAuthBase = () => {
           .insert([{
             id: userId,
             full_name: userMetadata?.full_name || 'New User',
-            username: userMetadata?.email ? userMetadata.email.split('@')[0] : userMetadata?.phone || 'user',
+            username: userMetadata?.email ? userMetadata.email.split('@')[0] : userMetadata?.phone || 'user' + Math.floor(Math.random() * 1000),
             joined_date: new Date().toISOString()
           }]);
           

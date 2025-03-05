@@ -1,7 +1,5 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { z } from "zod";
 import { EmailFormValues } from "@/components/auth/EmailLoginForm";
 import { PhoneFormValues } from "@/components/auth/PhoneFormValues";
 import { useEmailAuth } from "./useEmailAuth";
@@ -27,15 +25,15 @@ export const useLoginHandlers = () => {
     setLoginError(null);
     
     try {
-      const { error } = await signIn(values.email, values.password);
+      const { error, user } = await signIn(values.email, values.password);
       
       if (error) {
         console.error("Email login error:", error);
         setLoginError(error.message || "Pa kapab konekte. Tanpri verifye imèl ou ak modpas ou.");
       } else {
-        console.log("Email login successful, redirecting to home");
+        console.log("Email login successful, redirecting to home. User:", user?.id);
         // Successful login, navigate to home page
-        navigate("/");
+        setTimeout(() => navigate("/"), 500); // Small delay to let states update
       }
     } catch (error: any) {
       console.error("Unexpected email login error:", error);
@@ -90,7 +88,7 @@ export const useLoginHandlers = () => {
         
         // Navigate to home page
         console.log("Navigating to home page after successful OTP verification");
-        navigate("/");
+        setTimeout(() => navigate("/"), 500); // Small delay to let states update
       }
     } catch (error: any) {
       console.error("Unexpected OTP verification error:", error);
