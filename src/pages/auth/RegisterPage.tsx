@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -12,12 +13,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, UserPlus, Phone, Mail } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/ui/use-toast";
 
 const emailFormSchema = z.object({
   name: z.string().min(2, "Non dwe gen omwen 2 karaktè"),
   email: z.string().email("Tanpri antre yon adrès imèl valid"),
   password: z.string().min(6, "Modpas dwe gen omwen 6 karaktè"),
   confirmPassword: z.string().min(6, "Modpas dwe gen omwen 6 karaktè"),
+  location: z.string().optional(),
+  bio: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Modpas yo pa menm",
   path: ["confirmPassword"],
@@ -26,6 +30,8 @@ const emailFormSchema = z.object({
 const phoneFormSchema = z.object({
   name: z.string().min(2, "Non dwe gen omwen 2 karaktè"),
   phone: z.string().min(8, "Tanpri antre yon nimewo telefòn valid"),
+  location: z.string().optional(),
+  bio: z.string().optional(),
 });
 
 const otpFormSchema = z.object({
@@ -42,7 +48,10 @@ const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [userName, setUserName] = useState("");
+  const [userLocation, setUserLocation] = useState("");
+  const [userBio, setUserBio] = useState("");
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailFormSchema),
@@ -51,6 +60,8 @@ const RegisterPage = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      location: "",
+      bio: "",
     },
   });
 
@@ -59,6 +70,8 @@ const RegisterPage = () => {
     defaultValues: {
       name: "",
       phone: "",
+      location: "",
+      bio: "",
     },
   });
 
@@ -73,9 +86,42 @@ const RegisterPage = () => {
     setIsLoading(true);
     try {
       await signUp(values.email, values.password, values.name);
+      
+      // After signup is successful, add additional profile information
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (userData?.user) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            location: values.location || null,
+            bio: values.bio || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userData.user.id);
+          
+        if (error) {
+          console.error("Error updating profile information:", error);
+          toast({
+            title: "Erè",
+            description: "Te gen yon erè pandan n'ap mete ajou pwofil ou.",
+            variant: "destructive"
+          });
+        }
+      }
+      
+      toast({
+        title: "Kont kreye",
+        description: "Ou kapab konekte kounye a avèk nouvo kont ou.",
+      });
       navigate("/auth/login");
     } catch (error) {
       console.error("Error during registration:", error);
+      toast({
+        title: "Erè enskripsyon",
+        description: "Te gen yon erè pandan n'ap kreye kont ou. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -87,12 +133,30 @@ const RegisterPage = () => {
       const formattedPhone = formatPhoneNumber(values.phone);
       setPhoneNumber(formattedPhone);
       setUserName(values.name);
+      setUserLocation(values.location || "");
+      setUserBio(values.bio || "");
+      
       const { error } = await signInWithPhoneNumber(formattedPhone);
       if (!error) {
         setIsOtpDialogOpen(true);
+        toast({
+          title: "Kòd OTP voye",
+          description: "Tanpri tcheke telefòn ou pou kòd verifikasyon an.",
+        });
+      } else {
+        toast({
+          title: "Erè",
+          description: "Te gen yon erè pandan n'ap voye kòd OTP a. Tanpri eseye ankò.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("Error during phone registration:", error);
+      toast({
+        title: "Erè",
+        description: "Te gen yon erè pandan n'ap enskri ou. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -103,7 +167,7 @@ const RegisterPage = () => {
     try {
       const { error, user } = await verifyPhoneOTP(phoneNumber, values.token);
       if (!error && user) {
-        // Update user profile with name after OTP verification
+        // Update user profile with name, location, and bio after OTP verification
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert([
@@ -112,19 +176,42 @@ const RegisterPage = () => {
               phone: phoneNumber,
               full_name: userName,
               username: phoneNumber.replace(/\D/g, ''),
+              location: userLocation,
+              bio: userBio,
               updated_at: new Date().toISOString(),
             },
           ]);
 
         if (profileError) {
           console.error("Error updating profile:", profileError);
+          toast({
+            title: "Erè",
+            description: "Te gen yon erè pandan n'ap mete ajou pwofil ou.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Verifikasyon reyisi",
+            description: "Kont ou kreye ak siksè!",
+          });
         }
 
         setIsOtpDialogOpen(false);
         navigate("/");
+      } else {
+        toast({
+          title: "Erè verifikasyon",
+          description: "Kòd OTP ou antre a pa valid. Tanpri eseye ankò.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("Error during OTP verification:", error);
+      toast({
+        title: "Erè",
+        description: "Te gen yon erè pandan n'ap verifye kòd OTP a. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -137,6 +224,11 @@ const RegisterPage = () => {
       // The redirect will be handled by Supabase
     } catch (error) {
       console.error("Error during Google sign in:", error);
+      toast({
+        title: "Erè koneksyon Google",
+        description: "Te gen yon erè pandan n'ap konekte ak Google. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
       setIsLoading(false);
     }
   };
@@ -213,6 +305,32 @@ const RegisterPage = () => {
                   />
                   <FormField
                     control={emailForm.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Lokasyon</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Pòtoprens, Ayiti" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={emailForm.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Byografi</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Kèk mo sou ou..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={emailForm.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
@@ -278,6 +396,32 @@ const RegisterPage = () => {
                         <FormLabel>Nimewo Telefòn</FormLabel>
                         <FormControl>
                           <Input placeholder="+509 XXXX XXXX" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={phoneForm.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Lokasyon</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Pòtoprens, Ayiti" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={phoneForm.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Byografi</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Kèk mo sou ou..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -252,19 +252,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await verifyOTP(phone, token);
       if (error) throw error;
       
-      // Update profile if needed
+      // If this is a new user, make sure a profile is created
       if (data?.user) {
-        const { error: profileError } = await supabase
+        // Check if profile exists
+        const { data: existingProfile } = await supabase
           .from('profiles')
-          .upsert([
-            {
-              id: data.user.id,
-              phone: phone,
-              updated_at: new Date().toISOString(),
-            },
-          ]);
+          .select('id')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (!existingProfile) {
+          // Profile doesn't exist yet, create one
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: data.user.id,
+                phone: phone,
+                full_name: data.user.user_metadata?.full_name || 'New User',
+                username: phone.replace(/\D/g, ''),
+                updated_at: new Date().toISOString(),
+              },
+            ]);
 
-        if (profileError) throw profileError;
+          if (profileError) throw profileError;
+        }
       }
       
       toast({
