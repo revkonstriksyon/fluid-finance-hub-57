@@ -16,7 +16,12 @@ import {
   CheckCircle
 } from "lucide-react";
 
-const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
+interface ProfileInfoProps {
+  onEdit?: () => void;
+  onChangePhoto?: () => void;
+}
+
+const ProfileInfo = ({ onEdit, onChangePhoto }: ProfileInfoProps) => {
   const { profile, user, bankAccounts } = useAuth();
   
   // Check if user email is verified
@@ -74,7 +79,7 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
               </p>
               
               <Button 
-                onClick={onEdit} 
+                onClick={onChangePhoto} 
                 variant="outline" 
                 className="w-full flex items-center justify-center border-[#2A4D8F] text-[#2A4D8F] hover:bg-[#2A4D8F]/10"
               >
