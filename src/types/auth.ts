@@ -1,7 +1,8 @@
 
 import { Session, User } from '@supabase/supabase-js';
+import { Profile } from '@/types/auth';
+import { BankAccount } from '@/types/auth';
 
-// Define types for user profile and bank account
 export interface Profile {
   id: string;
   full_name: string;
@@ -28,12 +29,13 @@ export type AuthContextType = {
   bankAccounts: BankAccount[];
   loading: boolean;
   userLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ error: any | null }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ error: any | null, user: User | null }>;
+  signOut: () => Promise<{ error: any | null }>;
+  resetPassword: (email: string) => Promise<{ error: any | null }>;
   signInWithPhoneNumber: (phone: string) => Promise<{ error: any | null }>;
   verifyPhoneOTP: (phone: string, token: string) => Promise<{ error: any | null, user: User | null }>;
   signInWithGoogleAccount: () => Promise<{ error: any | null }>;
+  signInWithFacebookAccount: () => Promise<{ error: any | null }>;
   refreshProfile: () => Promise<void>;
 };
