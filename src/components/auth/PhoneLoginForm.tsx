@@ -6,6 +6,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Phone } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const phoneFormSchema = z.object({
   phone: z.string().min(8, "Tanpri antre yon nimewo telefòn valid"),
@@ -16,9 +17,16 @@ export type PhoneFormValues = z.infer<typeof phoneFormSchema>;
 interface PhoneLoginFormProps {
   onSubmit: (values: PhoneFormValues) => Promise<void>;
   isLoading: boolean;
+  rememberMe?: boolean;
+  onRememberMeChange?: (value: boolean) => void;
 }
 
-const PhoneLoginForm = ({ onSubmit, isLoading }: PhoneLoginFormProps) => {
+const PhoneLoginForm = ({ 
+  onSubmit, 
+  isLoading,
+  rememberMe = false,
+  onRememberMeChange
+}: PhoneLoginFormProps) => {
   const form = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneFormSchema),
     defaultValues: {
@@ -42,6 +50,23 @@ const PhoneLoginForm = ({ onSubmit, isLoading }: PhoneLoginFormProps) => {
             </FormItem>
           )}
         />
+        
+        {onRememberMeChange && (
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="remember-me-phone" 
+              checked={rememberMe} 
+              onCheckedChange={(checked) => onRememberMeChange(!!checked)} 
+            />
+            <label 
+              htmlFor="remember-me-phone" 
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Kenbe mwen konekte
+            </label>
+          </div>
+        )}
+        
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <div className="flex items-center">

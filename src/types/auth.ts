@@ -58,14 +58,20 @@ export type AuthContextType = {
   verifyPhoneOTP: (phone: string, token: string) => Promise<{ error: any | null, user: User | null, session: Session | null }>;
   signInWithGoogleAccount: () => Promise<{ error: any | null }>;
   refreshProfile: () => Promise<void>;
-  // Nouvelles propriétés
+  // Security and authentication related properties
   setup2FA?: (userId: string) => Promise<{ enabled: boolean, error: any | null }>;
   disable2FA?: (userId: string) => Promise<{ disabled: boolean, error: any | null }>;
   verify2FA?: (token: string, userId: string) => Promise<{ verified: boolean, error: any | null }>;
   is2FAEnabled?: boolean;
   is2FAVerified?: boolean;
-  getActiveSessions?: () => Promise<{ sessions: ActiveSession[], error: any | null }>;
+  // Session management
+  getActiveSessions?: (userId?: string) => Promise<{ sessions: ActiveSession[], error: any | null }>;
   terminateSession?: (sessionId: string) => Promise<{ success: boolean, error: any | null }>;
   terminateAllSessions?: () => Promise<{ success: boolean, error: any | null }>;
-  getAuthActivity?: (limit?: number) => Promise<{ activities: AuthActivity[], error: any | null }>;
+  // Auth activity
+  getAuthActivity?: (userId?: string, limit?: number) => Promise<{ activities: AuthActivity[], error: any | null }>;
+  recordAuthActivity?: (userId: string, activityType: string, details: string, ipAddress?: string, deviceInfo?: string) => Promise<{ success: boolean, error: any | null }>;
+  // Data storage for sessions and activities
+  activeSessions?: ActiveSession[];
+  authActivities?: AuthActivity[];
 };

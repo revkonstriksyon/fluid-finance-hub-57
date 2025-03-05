@@ -3,8 +3,12 @@ import { supabase } from '@/lib/supabase';
 import { AuthActivity } from '@/types/auth';
 
 export const useAuthActivity = () => {
-  const getAuthActivity = async (userId: string, limit: number = 10): Promise<{ activities: AuthActivity[], error: any | null }> => {
+  const getAuthActivity = async (userId?: string, limit: number = 10): Promise<{ activities: AuthActivity[], error: any | null }> => {
     try {
+      if (!userId) {
+        return { activities: [], error: new Error('User ID is required') };
+      }
+      
       const { data, error } = await supabase
         .from('auth_activity')
         .select('*')

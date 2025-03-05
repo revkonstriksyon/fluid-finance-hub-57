@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth";
@@ -47,7 +46,7 @@ const LoginPage = () => {
       
       console.log("Login successful, user:", user);
       
-      // Record auth activity
+      // Record auth activity if the function exists
       if (user && recordAuthActivity) {
         await recordAuthActivity(
           user.id,
@@ -94,7 +93,7 @@ const LoginPage = () => {
       const { error, user } = await verifyPhoneOTP(phoneNumber, values.token);
       if (error) throw error;
       
-      // Record auth activity
+      // Record auth activity if the function exists
       if (user && recordAuthActivity) {
         await recordAuthActivity(
           user.id,

@@ -6,8 +6,12 @@ import { ActiveSession } from '@/types/auth';
 export const useSessionManagement = () => {
   const { toast } = useAuthBase();
 
-  const getActiveSessions = async (userId: string): Promise<{ sessions: ActiveSession[], error: any | null }> => {
+  const getActiveSessions = async (userId?: string): Promise<{ sessions: ActiveSession[], error: any | null }> => {
     try {
+      if (!userId) {
+        return { sessions: [], error: new Error('User ID is required') };
+      }
+      
       const { data, error } = await supabase
         .from('active_sessions')
         .select('*')
