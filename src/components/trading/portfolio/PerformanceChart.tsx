@@ -11,7 +11,7 @@ import {
   Area,
   XAxis,
   YAxis,
-  RechartsTooltip,
+  Tooltip,
   ResponsiveContainer,
 } from 'recharts';
 import { portfolioPerformanceData } from '../tradingData';
@@ -42,9 +42,9 @@ const PerformanceChart = () => {
                 axisLine={false} 
                 tickFormatter={(value) => `$${value.toLocaleString()}`}
               />
-              <RechartsTooltip 
-                formatter={(value) => [`$${value.toLocaleString()}`, 'Valè']}
-                labelFormatter={(label) => `${label} 2023`}
+              <Tooltip 
+                formatter={(value: any) => [`$${value.toLocaleString()}`, 'Valè']}
+                labelFormatter={(label: any) => `${label} 2023`}
               />
               <Area
                 type="monotone"
