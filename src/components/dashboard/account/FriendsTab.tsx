@@ -85,6 +85,9 @@ const FriendsTab = () => {
       
       // Process friends data to ensure the friend property has the other user's info
       const processedFriends = friendsData.map(friend => {
+        // Handle case where friend is returned as an array instead of a single object
+        const friendProfile = Array.isArray(friend.friend) ? friend.friend[0] : friend.friend;
+        
         // If the current user is the friend_id, swap the friend property to show the user info
         if (friend.friend_id === user.id) {
           return {
@@ -98,7 +101,11 @@ const FriendsTab = () => {
             }
           };
         }
-        return friend;
+        
+        return {
+          ...friend,
+          friend: friendProfile
+        };
       });
       
       // For each friend where we need to fetch the additional profile info
@@ -119,7 +126,7 @@ const FriendsTab = () => {
         return friend;
       }));
       
-      // Convert to Friend[] type with type assertion
+      // Explicitly cast to Friend[] type
       setFriends(friendsWithProfiles as Friend[]);
       
       // Fetch pending friend requests (where the current user is the friend_id)
@@ -139,7 +146,13 @@ const FriendsTab = () => {
       
       if (requestsError) throw requestsError;
       
-      setFriendRequests(requestsData as Friend[]);
+      // Handle case where friend could be an array
+      const processedRequests = requestsData.map(request => ({
+        ...request,
+        friend: Array.isArray(request.friend) ? request.friend[0] : request.friend
+      }));
+      
+      setFriendRequests(processedRequests as Friend[]);
     } catch (error) {
       console.error('Error fetching friends:', error);
       toast({
