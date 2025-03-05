@@ -7,7 +7,7 @@ import { PencilIcon, PhoneIcon, MapPinIcon, CalendarIcon, MailIcon, UserIcon } f
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
-  const { profile, user } = useAuth();
+  const { profile, user, bankAccounts } = useAuth();
   
   // Check if user email is verified
   const isEmailVerified = user?.email_confirmed_at ? true : false;
@@ -144,7 +144,7 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
                 </div>
                 <div className="p-3 rounded-lg bg-finance-blue/5">
                   <div className="text-xs text-muted-foreground mb-1">Kont Bankè</div>
-                  <div className="text-xl font-bold text-finance-blue">{profile?.bank_accounts?.length || 0}</div>
+                  <div className="text-xl font-bold text-finance-blue">{bankAccounts?.length || 0}</div>
                 </div>
               </div>
             </div>
