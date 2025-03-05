@@ -10,12 +10,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import ProfileImageUploader from "@/components/profile/ProfileImageUploader";
+import { useNavigate } from "react-router-dom";
 
 const ProfilePage = () => {
   const { profile, userLoading } = useAuth();
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     full_name: "",
@@ -37,6 +40,11 @@ const ProfilePage = () => {
       });
     }
   }, [profile, userLoading]);
+
+  const handleSaveSuccess = () => {
+    // Navigate to account page on successful save
+    navigate('/');
+  };
 
   // Loading state
   if (userLoading) {
@@ -61,7 +69,10 @@ const ProfilePage = () => {
           </div>
 
           <div className="md:col-span-2">
-            <ProfileForm initialData={formData} />
+            <ProfileForm 
+              initialData={formData} 
+              onSaveSuccess={handleSaveSuccess}
+            />
           </div>
         </div>
       </div>
@@ -70,6 +81,9 @@ const ProfilePage = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Mete ajou foto pwofil</DialogTitle>
+            <DialogDescription>
+              Chwazi yon nouvo foto pou pwofil ou.
+            </DialogDescription>
           </DialogHeader>
           <ProfileImageUploader onClose={() => setIsImageDialogOpen(false)} />
         </DialogContent>

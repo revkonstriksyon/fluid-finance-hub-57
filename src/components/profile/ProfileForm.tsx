@@ -7,15 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import ProfileImageUploader from "./ProfileImageUploader";
+import { Pencil } from "lucide-react";
 
 interface ProfileFormProps {
   initialData: {
@@ -25,20 +17,24 @@ interface ProfileFormProps {
     bio: string;
     phone: string;
   };
+  onSaveSuccess?: () => void;
 }
 
-const ProfileForm = ({ initialData }: ProfileFormProps) => {
+const ProfileForm = ({ initialData, onSaveSuccess }: ProfileFormProps) => {
   const { toast } = useToast();
   const { user, refreshProfile } = useAuth();
-  const navigate = useNavigate();
   
   const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState(initialData);
-  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [editField, setEditField] = useState<string | null>(null);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const toggleEdit = (fieldName: string) => {
+    setEditField(editField === fieldName ? null : fieldName);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,8 +74,11 @@ const ProfileForm = ({ initialData }: ProfileFormProps) => {
         description: "Chanjman yo anrejistre avèk siksè",
       });
       
-      // Navigate to account page
-      navigate('/');
+      // Call the onSaveSuccess callback if provided
+      if (onSaveSuccess) {
+        onSaveSuccess();
+      }
+      
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast({
@@ -89,113 +88,134 @@ const ProfileForm = ({ initialData }: ProfileFormProps) => {
       });
     } finally {
       setIsUpdating(false);
+      setEditField(null); // Reset edit mode
     }
   };
 
+  const renderEditableField = (
+    label: string, 
+    name: string, 
+    value: string, 
+    type: string = "text",
+    disabled: boolean = false,
+    description?: string
+  ) => {
+    const isEditing = editField === name;
+    const canEdit = !disabled;
+    
+    return (
+      <div className="space-y-2 mb-4">
+        <div className="flex justify-between items-center">
+          <Label htmlFor={name}>{label}</Label>
+          {canEdit && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => toggleEdit(name)} 
+              className="h-8 px-2"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        
+        {isEditing ? (
+          <Input 
+            id={name} 
+            name={name} 
+            value={value} 
+            onChange={handleChange} 
+            type={type}
+            disabled={disabled}
+          />
+        ) : (
+          <div className="p-2 border rounded-md bg-muted/30">
+            {value || <span className="text-muted-foreground italic">Pa ranpli</span>}
+          </div>
+        )}
+        
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <>
-      <form onSubmit={handleSubmit} className="finance-card p-6">
-        <div className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Non Konplè</Label>
-              <Input 
-                id="full_name" 
-                name="full_name" 
-                value={formData.full_name} 
-                onChange={handleChange} 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="username">Non Itilizatè</Label>
-              <div className="flex">
-                <span className="inline-flex items-center px-3 bg-finance-lightGray/80 dark:bg-white/10 border border-r-0 border-input rounded-l-md">@</span>
-                <Input 
-                  id="username" 
-                  name="username" 
-                  className="rounded-l-none" 
-                  value={formData.username} 
-                  onChange={handleChange} 
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Imèl</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                value={user?.email || ""}
-                disabled
-                className="bg-gray-100"
-              />
-              <p className="text-xs text-finance-charcoal/70 dark:text-white/70">Imèl pa ka chanje</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefòn</Label>
-              <Input 
-                id="phone" 
-                name="phone" 
-                value={formData.phone} 
-                onChange={handleChange} 
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Lokasyon</Label>
-            <Input 
-              id="location" 
-              name="location" 
-              value={formData.location} 
-              onChange={handleChange} 
-            />
-          </div>
-
-          <div className="space-y-2">
+    <form onSubmit={handleSubmit} className="finance-card p-6">
+      <div className="space-y-2">
+        {renderEditableField("Non Konplè", "full_name", formData.full_name)}
+        
+        {renderEditableField("Non Itilizatè", "username", formData.username)}
+        
+        {renderEditableField(
+          "Imèl", 
+          "email", 
+          user?.email || "", 
+          "email", 
+          true, 
+          "Imèl pa ka chanje"
+        )}
+        
+        {renderEditableField("Telefòn", "phone", formData.phone)}
+        
+        {renderEditableField("Lokasyon", "location", formData.location)}
+        
+        <div className="space-y-2 mb-4">
+          <div className="flex justify-between items-center">
             <Label htmlFor="bio">Byografi</Label>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => toggleEdit("bio")} 
+              className="h-8 px-2"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {editField === "bio" ? (
             <Textarea 
               id="bio" 
               name="bio" 
               rows={4} 
-              value={formData.bio} 
+              value={formData.bio || ''} 
               onChange={handleChange} 
             />
-            <p className="text-xs text-finance-charcoal/70 dark:text-white/70">Byografi w ap parèt sou pwofil piblik ou.</p>
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button 
-              variant="outline" 
-              type="button" 
-              onClick={() => {
-                setFormData(initialData);
-                navigate('/');
-              }}
-            >
-              Anile
-            </Button>
-            <Button type="submit" disabled={isUpdating}>
-              {isUpdating ? 'Chajman...' : 'Sovegade'}
-            </Button>
-          </div>
+          ) : (
+            <div className="p-2 border rounded-md bg-muted/30 min-h-[100px]">
+              {formData.bio || <span className="text-muted-foreground italic">Pa gen byografi</span>}
+            </div>
+          )}
+          
+          <p className="text-xs text-muted-foreground">
+            Byografi w ap parèt sou pwofil piblik ou.
+          </p>
         </div>
-      </form>
-      
-      <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Mete ajou foto pwofil</DialogTitle>
-            <DialogDescription>
-              Chwazi yon nouvo foto pou pwofil ou.
-            </DialogDescription>
-          </DialogHeader>
-          <ProfileImageUploader onClose={() => setIsImageDialogOpen(false)} />
-        </DialogContent>
-      </Dialog>
-    </>
+
+        <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
+          <Button 
+            variant="outline" 
+            type="button" 
+            onClick={() => {
+              setFormData(initialData);
+              setEditField(null);
+              if (onSaveSuccess) {
+                onSaveSuccess();
+              }
+            }}
+          >
+            Anile
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isUpdating || !editField}
+          >
+            {isUpdating ? 'Chajman...' : 'Sovegade'}
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 };
 
