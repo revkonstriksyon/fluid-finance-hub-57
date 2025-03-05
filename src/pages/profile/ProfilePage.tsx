@@ -5,9 +5,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileInfo from "@/components/profile/ProfileInfo";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ProfileImageUploader from "@/components/profile/ProfileImageUploader";
 
 const ProfilePage = () => {
   const { profile, userLoading } = useAuth();
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     full_name: "",
@@ -49,7 +57,7 @@ const ProfilePage = () => {
         
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-1">
-            <ProfileInfo />
+            <ProfileInfo onEdit={() => setIsImageDialogOpen(true)} />
           </div>
 
           <div className="md:col-span-2">
@@ -57,6 +65,15 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+      
+      <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mete ajou foto pwofil</DialogTitle>
+          </DialogHeader>
+          <ProfileImageUploader onClose={() => setIsImageDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

@@ -7,6 +7,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ProfileImageUploader from "./ProfileImageUploader";
 
 interface ProfileFormProps {
   initialData: {
@@ -21,10 +30,12 @@ interface ProfileFormProps {
 const ProfileForm = ({ initialData }: ProfileFormProps) => {
   const { toast } = useToast();
   const { user, refreshProfile } = useAuth();
+  const navigate = useNavigate();
   
   const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState(initialData);
-
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -66,6 +77,9 @@ const ProfileForm = ({ initialData }: ProfileFormProps) => {
         title: "Pwofil Mete Ajou",
         description: "Chanjman yo anrejistre avèk siksè",
       });
+      
+      // Navigate to account page
+      navigate('/');
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast({
@@ -79,88 +93,109 @@ const ProfileForm = ({ initialData }: ProfileFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="finance-card p-6">
-      <div className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="full_name">Non Konplè</Label>
-            <Input 
-              id="full_name" 
-              name="full_name" 
-              value={formData.full_name} 
-              onChange={handleChange} 
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="username">Non Itilizatè</Label>
-            <div className="flex">
-              <span className="inline-flex items-center px-3 bg-finance-lightGray/80 dark:bg-white/10 border border-r-0 border-input rounded-l-md">@</span>
+    <>
+      <form onSubmit={handleSubmit} className="finance-card p-6">
+        <div className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Non Konplè</Label>
               <Input 
-                id="username" 
-                name="username" 
-                className="rounded-l-none" 
-                value={formData.username} 
+                id="full_name" 
+                name="full_name" 
+                value={formData.full_name} 
+                onChange={handleChange} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="username">Non Itilizatè</Label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 bg-finance-lightGray/80 dark:bg-white/10 border border-r-0 border-input rounded-l-md">@</span>
+                <Input 
+                  id="username" 
+                  name="username" 
+                  className="rounded-l-none" 
+                  value={formData.username} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Imèl</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                value={user?.email || ""}
+                disabled
+                className="bg-gray-100"
+              />
+              <p className="text-xs text-finance-charcoal/70 dark:text-white/70">Imèl pa ka chanje</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefòn</Label>
+              <Input 
+                id="phone" 
+                name="phone" 
+                value={formData.phone} 
                 onChange={handleChange} 
               />
             </div>
           </div>
-        </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Imèl</Label>
+            <Label htmlFor="location">Lokasyon</Label>
             <Input 
-              id="email" 
-              type="email" 
-              value={user?.email || ""}
-              disabled
-              className="bg-gray-100"
-            />
-            <p className="text-xs text-finance-charcoal/70 dark:text-white/70">Imèl pa ka chanje</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Telefòn</Label>
-            <Input 
-              id="phone" 
-              name="phone" 
-              value={formData.phone} 
+              id="location" 
+              name="location" 
+              value={formData.location} 
               onChange={handleChange} 
             />
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="location">Lokasyon</Label>
-          <Input 
-            id="location" 
-            name="location" 
-            value={formData.location} 
-            onChange={handleChange} 
-          />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="bio">Byografi</Label>
+            <Textarea 
+              id="bio" 
+              name="bio" 
+              rows={4} 
+              value={formData.bio} 
+              onChange={handleChange} 
+            />
+            <p className="text-xs text-finance-charcoal/70 dark:text-white/70">Byografi w ap parèt sou pwofil piblik ou.</p>
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="bio">Byografi</Label>
-          <Textarea 
-            id="bio" 
-            name="bio" 
-            rows={4} 
-            value={formData.bio} 
-            onChange={handleChange} 
-          />
-          <p className="text-xs text-finance-charcoal/70 dark:text-white/70">Byografi w ap parèt sou pwofil piblik ou.</p>
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button 
+              variant="outline" 
+              type="button" 
+              onClick={() => {
+                setFormData(initialData);
+                navigate('/');
+              }}
+            >
+              Anile
+            </Button>
+            <Button type="submit" disabled={isUpdating}>
+              {isUpdating ? 'Chajman...' : 'Sovegade'}
+            </Button>
+          </div>
         </div>
-
-        <div className="flex justify-end space-x-3 pt-4">
-          <Button variant="outline" type="button" onClick={() => {
-            setFormData(initialData);
-          }}>Anile</Button>
-          <Button type="submit" disabled={isUpdating}>
-            {isUpdating ? 'Chajman...' : 'Sove Chanjman yo'}
-          </Button>
-        </div>
-      </div>
-    </form>
+      </form>
+      
+      <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mete ajou foto pwofil</DialogTitle>
+            <DialogDescription>
+              Chwazi yon nouvo foto pou pwofil ou.
+            </DialogDescription>
+          </DialogHeader>
+          <ProfileImageUploader onClose={() => setIsImageDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
