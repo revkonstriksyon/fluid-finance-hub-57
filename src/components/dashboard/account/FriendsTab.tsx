@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { MessageSquare, Plus, UserPlus, X, Search, Check, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -860,4 +861,61 @@ const FriendsTab = () => {
                       <div key={user.id} className="flex items-center p-3 border border-finance-midGray/30 dark:border-white/10 rounded-lg">
                         <Avatar className="h-12 w-12 mr-4">
                           <AvatarImage src={user.avatar_url || ""} />
-                          <AvatarFallback className="
+                          <AvatarFallback className="bg-finance-blue text-white">
+                            {user.full_name 
+                              ? user.full_name.split(' ').map(n => n[0]).join('')
+                              : "??"}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1">
+                          <p className="font-medium">{user.full_name || "Itilizatè"}</p>
+                          <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
+                            @{user.username || "username"}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          {user.isFriend ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => startConversation(user.id)}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-2" />
+                              Mesaj
+                            </Button>
+                          ) : user.friendStatus === 'pending' ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              disabled
+                            >
+                              <Clock className="h-4 w-4 mr-2" />
+                              Annatant
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => sendFriendRequest(user.id)}
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Ajoute
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default FriendsTab;
