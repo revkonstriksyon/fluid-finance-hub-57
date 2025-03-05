@@ -30,6 +30,8 @@ export const usePhoneAuth = () => {
       const { data, error } = await verifyOTP(phone, token);
       if (error) throw error;
       
+      console.log("OTP verification successful, data:", data);
+      
       // If this is a new user, make sure a profile is created
       if (data?.user) {
         const { error: profileError } = await handleProfileCreation(data.user.id, {
@@ -46,6 +48,7 @@ export const usePhoneAuth = () => {
       });
       return { error: null, user: data?.user || null, session: data?.session || null };
     } catch (error: any) {
+      console.error("OTP verification error:", error);
       toast({
         title: "Erè verifikasyon",
         description: error.message || "Kòd OTP ou antre a pa valid. Tanpri eseye ankò.",

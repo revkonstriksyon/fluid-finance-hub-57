@@ -6,7 +6,7 @@ import CreditSection from '@/components/dashboard/CreditSection';
 import GamblingSection from '@/components/dashboard/gambling/GamblingSection';
 import TradingSection from '@/components/dashboard/TradingSection';
 import AccountSection from '@/components/dashboard/AccountSection';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('bank');
