@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, signInWithPhone, verifyOTP, signInWithGoogle } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -12,6 +12,9 @@ type AuthContextType = {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  signInWithPhoneNumber: (phone: string) => Promise<{ error: any | null }>;
+  verifyPhoneOTP: (phone: string, token: string) => Promise<{ error: any | null, user: User | null }>;
+  signInWithGoogleAccount: () => Promise<{ error: any | null }>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -82,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               full_name: name,
               username: email.split('@')[0],
               avatar_url: '',
+              phone: '',
             },
           ]);
 
@@ -138,8 +142,88 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInWithPhoneNumber = async (phone: string) => {
+    try {
+      const { error } = await signInWithPhone(phone);
+      if (error) throw error;
+      toast({
+        title: "Kòd OTP voye",
+        description: "Tanpri verifye telefòn ou pou kòd OTP a.",
+      });
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè koneksyon",
+        description: error.message || "Pa kapab voye kòd OTP. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
+  const verifyPhoneOTP = async (phone: string, token: string) => {
+    try {
+      const { data, error } = await verifyOTP(phone, token);
+      if (error) throw error;
+      
+      // Update profile if needed
+      if (data?.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert([
+            {
+              id: data.user.id,
+              phone: phone,
+              updated_at: new Date().toISOString(),
+            },
+          ]);
+
+        if (profileError) throw profileError;
+      }
+      
+      toast({
+        title: "Verifikasyon reyisi",
+        description: "Ou konekte ak kont ou.",
+      });
+      return { error: null, user: data?.user || null };
+    } catch (error: any) {
+      toast({
+        title: "Erè verifikasyon",
+        description: error.message || "Kòd OTP ou antre a pa valid. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error, user: null };
+    }
+  };
+
+  const signInWithGoogleAccount = async () => {
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè koneksyon Google",
+        description: error.message || "Pa kapab konekte ak Google. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, loading, signIn, signUp, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut, 
+      resetPassword,
+      signInWithPhoneNumber,
+      verifyPhoneOTP,
+      signInWithGoogleAccount
+    }}>
       {children}
     </AuthContext.Provider>
   );
