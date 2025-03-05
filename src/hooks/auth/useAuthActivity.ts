@@ -1,60 +1,40 @@
 
-import { supabase } from '@/lib/supabase';
-import { AuthActivity } from '@/types/auth';
+import { supabase, recordAuthActivity as recordActivity, getAuthActivity as fetchActivities } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 export const useAuthActivity = () => {
-  const getAuthActivity = async (userId?: string, limit: number = 10): Promise<{ activities: AuthActivity[], error: any | null }> => {
-    try {
-      if (!userId) {
-        return { activities: [], error: new Error('User ID is required') };
-      }
-      
-      const { data, error } = await supabase
-        .from('auth_activity')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
-
-      return { activities: data || [], error: null };
-    } catch (error: any) {
-      console.error("Erreur lors de la récupération des activités:", error);
-      return { activities: [], error };
-    }
-  };
+  const { toast } = useToast();
 
   const recordAuthActivity = async (
     userId: string, 
     activityType: string, 
-    details: string,
-    ipAddress?: string,
+    details: string, 
+    ipAddress?: string, 
     deviceInfo?: string
-  ): Promise<{ success: boolean, error: any | null }> => {
+  ) => {
     try {
-      const { error } = await supabase
-        .from('auth_activity')
-        .insert({
-          user_id: userId,
-          activity_type: activityType,
-          details,
-          ip_address: ipAddress,
-          device_info: deviceInfo,
-          created_at: new Date().toISOString()
-        });
-
+      const { data, error } = await recordActivity(userId, activityType, details, ipAddress, deviceInfo);
       if (error) throw error;
-
       return { success: true, error: null };
     } catch (error: any) {
-      console.error("Erreur lors de l'enregistrement de l'activité:", error);
+      console.error('Error recording auth activity:', error);
       return { success: false, error };
     }
   };
 
+  const getAuthActivity = async (userId: string, limit?: string) => {
+    try {
+      const { data, error } = await fetchActivities(userId, limit ? parseInt(limit) : undefined);
+      if (error) throw error;
+      return { activities: data || [], error: null };
+    } catch (error: any) {
+      console.error('Error getting auth activities:', error);
+      return { activities: [], error };
+    }
+  };
+
   return {
-    getAuthActivity,
-    recordAuthActivity
+    recordAuthActivity,
+    getAuthActivity
   };
 };

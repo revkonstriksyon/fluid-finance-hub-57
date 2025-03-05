@@ -1,4 +1,3 @@
-
 import { Session, User } from '@supabase/supabase-js';
 
 // Define types for user profile and bank account
@@ -69,7 +68,7 @@ export type AuthContextType = {
   terminateSession?: (sessionId: string) => Promise<{ success: boolean, error: any | null }>;
   terminateAllSessions?: () => Promise<{ success: boolean, error: any | null }>;
   // Auth activity
-  getAuthActivity?: (userId?: string, limit?: number) => Promise<{ activities: AuthActivity[], error: any | null }>;
+  getAuthActivity?: (userId?: string, limit?: string) => Promise<{ activities: AuthActivity[], error: any | null }>;
   recordAuthActivity?: (userId: string, activityType: string, details: string, ipAddress?: string, deviceInfo?: string) => Promise<{ success: boolean, error: any | null }>;
   // Data storage for sessions and activities
   activeSessions?: ActiveSession[];

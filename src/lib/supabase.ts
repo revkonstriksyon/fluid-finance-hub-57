@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Get Supabase URL and anon key from environment variables
@@ -122,7 +121,7 @@ export const getActiveSessions = async (userId: string) => {
 };
 
 // Helper for getting auth activity history
-export const getAuthActivity = async (userId: string, limit = 10) => {
+export const getAuthActivity = async (userId: string, limit: number = 10) => {
   const { data, error } = await supabase
     .from('auth_activity')
     .select('*')

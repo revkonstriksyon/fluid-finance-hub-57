@@ -1,3 +1,4 @@
+
 import { useState, useEffect, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -52,7 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to fetch auth activities
   const getAuthActivity = async (userId?: string, limit?: number) => {
     if (user && authOperations.getAuthActivity) {
-      const { activities, error } = await authOperations.getAuthActivity(user.id, limit ? limit.toString() : undefined);
+      // Convert limit to string only if defined
+      const { activities, error } = await authOperations.getAuthActivity(
+        user.id, 
+        limit?.toString()
+      );
       if (!error) {
         setAuthActivities(activities);
       }
@@ -162,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Load active sessions and auth activities
         getActiveSessions();
-        getAuthActivity(10);
+        getAuthActivity(session.user.id, 10);
       } else {
         // User logged out
         setActiveSessions([]);
@@ -207,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           // Load active sessions and auth activities
           getActiveSessions();
-          getAuthActivity(10);
+          getAuthActivity(session.user.id, 10);
         } else if (_event === 'SIGNED_OUT') {
           // Record logout activity if we still have the user ID
           if (currentSessionId && authOperations.terminateSession) {
