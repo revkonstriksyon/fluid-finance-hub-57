@@ -5,9 +5,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileInfo from "@/components/profile/ProfileInfo";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import ProfileImageUploader from "@/components/profile/ProfileImageUploader";
+import { useNavigate } from "react-router-dom";
 
 const ProfilePage = () => {
   const { profile, userLoading } = useAuth();
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     full_name: "",
@@ -30,12 +41,17 @@ const ProfilePage = () => {
     }
   }, [profile, userLoading]);
 
+  const handleSaveSuccess = () => {
+    // Navigate to account page on successful save
+    navigate('/');
+  };
+
   // Loading state
   if (userLoading) {
     return (
       <Layout>
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6 text-[#2A4D8F]">Pwofil Mwen</h1>
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6">Pwofil Mwen</h1>
           <ProfileSkeleton />
         </div>
       </Layout>
@@ -44,19 +60,34 @@ const ProfilePage = () => {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6 text-[#2A4D8F]">Pwofil Mwen</h1>
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">Pwofil Mwen</h1>
         
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-1">
-            <ProfileInfo />
+            <ProfileInfo onEdit={() => setIsImageDialogOpen(true)} />
           </div>
 
           <div className="md:col-span-2">
-            <ProfileForm initialData={formData} />
+            <ProfileForm 
+              initialData={formData} 
+              onSaveSuccess={handleSaveSuccess}
+            />
           </div>
         </div>
       </div>
+      
+      <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mete ajou foto pwofil</DialogTitle>
+            <DialogDescription>
+              Chwazi yon nouvo foto pou pwofil ou.
+            </DialogDescription>
+          </DialogHeader>
+          <ProfileImageUploader onClose={() => setIsImageDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

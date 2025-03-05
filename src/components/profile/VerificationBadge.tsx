@@ -1,5 +1,5 @@
 
-import { Shield, CheckCircle, Clock } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -21,7 +21,7 @@ const VerificationBadge = ({
     : '';
 
   const typeText = {
-    'email': 'Imèl Verifye',
+    'email': 'Imel Verifye',
     'phone': 'Telefòn Verifye',
     'id': 'Idantite Verifye',
     'multiple': 'Kont Verifye'
@@ -33,9 +33,9 @@ const VerificationBadge = ({
         <TooltipTrigger asChild>
           <Badge 
             variant="outline" 
-            className="ml-2 bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-500/20"
+            className="ml-2 bg-green-100 text-green-700 hover:bg-green-200 border-green-300"
           >
-            <CheckCircle className="h-3 w-3 mr-1" />
+            <CheckCircle className="h-3.5 w-3.5 mr-1 text-green-600" />
             {typeText[verifiedType]}
           </Badge>
         </TooltipTrigger>
