@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 const ProfilePage = () => {
   const { profile, userLoading } = useAuth();
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -42,8 +43,7 @@ const ProfilePage = () => {
   }, [profile, userLoading]);
 
   const handleSaveSuccess = () => {
-    // Navigate to account page on successful save
-    navigate('/');
+    setIsEditMode(false);
   };
 
   // Loading state
@@ -63,17 +63,24 @@ const ProfilePage = () => {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Pwofil Mwen</h1>
         
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-1">
-            <ProfileInfo onEdit={() => setIsImageDialogOpen(true)} />
-          </div>
-
-          <div className="md:col-span-2">
-            <ProfileForm 
-              initialData={formData} 
-              onSaveSuccess={handleSaveSuccess}
-            />
-          </div>
+        {isEditMode ? (
+          <ProfileForm 
+            initialData={formData} 
+            onSaveSuccess={handleSaveSuccess}
+          />
+        ) : (
+          <ProfileInfo onEdit={() => setIsImageDialogOpen(true)} />
+        )}
+        
+        <div className="mt-6 flex justify-end">
+          {!isEditMode && (
+            <button 
+              onClick={() => setIsEditMode(true)}
+              className="px-4 py-2 bg-[#2A4D8F] text-white rounded-md hover:bg-[#2A4D8F]/90 transition-colors"
+            >
+              ✏️ Modifye Pwofil
+            </button>
+          )}
         </div>
       </div>
       
