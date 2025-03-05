@@ -6,6 +6,7 @@ import { AuthContextType } from '@/types/auth';
 import { useProfileData } from '@/hooks/useProfileData';
 import { useAuthOperations } from '@/hooks/useAuthOperations';
 
+// Create the initial context with proper typing
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
