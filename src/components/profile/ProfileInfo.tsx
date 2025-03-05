@@ -1,9 +1,13 @@
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import VerificationBadge from "./VerificationBadge";
 
 const ProfileInfo = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  
+  // Check if user email is verified
+  const isEmailVerified = user?.email_confirmed_at ? true : false;
 
   const joinedDate = profile?.joined_date 
     ? new Date(profile.joined_date).toLocaleDateString('fr-FR', {
@@ -26,7 +30,11 @@ const ProfileInfo = () => {
       </div>
 
       <div className="finance-card p-6">
-        <h3 className="font-medium mb-3">Aktivite Pwofil</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-medium">Aktivite Pwofil</h3>
+          {isEmailVerified && <VerificationBadge isVerified={true} verifiedType="email" />}
+        </div>
+        
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span>Manm depi</span>

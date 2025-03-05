@@ -40,3 +40,26 @@ export const signInWithGoogle = async () => {
   });
   return { data, error };
 };
+
+// Helper function for Facebook authentication
+export const signInWithFacebook = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'facebook',
+    options: {
+      redirectTo: window.location.origin,
+    },
+  });
+  return { data, error };
+};
+
+// Helper function to get the current session
+export const getCurrentSession = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  return { session: data.session, error };
+};
+
+// Helper function to get the current user
+export const getCurrentUser = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  return { user: data.user, error };
+};
