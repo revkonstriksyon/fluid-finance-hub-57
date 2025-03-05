@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { MessageSquare, Plus, UserPlus, X, Search, Check, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -118,6 +119,7 @@ const FriendsTab = () => {
         return friend;
       }));
       
+      // Convert to Friend[] type with type assertion
       setFriends(friendsWithProfiles as Friend[]);
       
       // Fetch pending friend requests (where the current user is the friend_id)
