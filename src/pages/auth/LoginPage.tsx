@@ -68,9 +68,12 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      await signIn(values.email, values.password);
-      console.log("Login successful, navigating to home...");
-      navigate("/");
+      const { user, error } = await signIn(values.email, values.password);
+      if (error) throw error;
+      if (user) {
+        console.log("Login successful, navigating to home...");
+        navigate("/");
+      }
     } catch (error: any) {
       console.error("Error during login:", error);
       setLoginError(error.message || "Erè koneksyon. Tanpri tcheke idantifyan ou yo.");
