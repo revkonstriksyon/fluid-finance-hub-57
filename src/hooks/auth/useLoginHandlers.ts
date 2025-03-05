@@ -1,175 +1,182 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/auth";
-
-export type LoginHandlerOptions = {
-  rememberMe: boolean;
-};
+import { z } from "zod";
+import { EmailFormValues } from "@/components/auth/EmailLoginForm";
+import { PhoneFormValues } from "@/components/auth/PhoneFormValues";
+import { useEmailAuth } from "./useEmailAuth";
+import { usePhoneAuth } from "./usePhoneAuth";
+import { useSocialAuth } from "./useSocialAuth";
 
 export const useLoginHandlers = () => {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   
-  const { 
-    signIn, 
-    signInWithPhoneNumber, 
-    verifyPhoneOTP, 
-    signInWithGoogleAccount,
-    signInWithFacebookAccount,
-    signInWithAppleAccount,
-    recordAuthActivity 
-  } = useAuth();
+  const navigate = useNavigate();
+  
+  const { signIn } = useEmailAuth();
+  const { signInWithPhoneNumber, verifyPhoneOTP } = usePhoneAuth();
+  const { signInWithGoogleAccount, signInWithFacebookAccount, signInWithAppleAccount } = useSocialAuth();
 
-  const handleEmailSubmit = async (values: { email: string; password: string }) => {
+  const handleEmailSubmit = async (values: EmailFormValues) => {
+    console.log("Attempting email login with:", values.email);
     setIsLoading(true);
     setLoginError(null);
+    
     try {
-      console.log("Attempting login with email:", values.email);
-      const { user, error, session } = await signIn(values.email, values.password);
+      const { error } = await signIn(values.email, values.password);
       
       if (error) {
-        console.error("Login error:", error);
-        throw error;
-      }
-      
-      if (!user || !session) {
-        console.error("Login successful but no user or session returned");
-        throw new Error("Erè koneksyon. Pa gen itilizatè oswa sesyon retounen");
-      }
-      
-      console.log("Login successful, user:", user.id);
-      console.log("Session is valid:", !!session);
-      
-      // Record auth activity if the function exists
-      if (user && recordAuthActivity) {
-        await recordAuthActivity(
-          user.id,
-          'login',
-          'Email login successful',
-          undefined,
-          navigator.userAgent
-        );
-      }
-      
-      // Navigate to home page
-      console.log("Redirecting to home page");
-      navigate("/");
-    } catch (error: any) {
-      console.error("Error during login:", error);
-      setLoginError(error.message || "Erè koneksyon. Tanpri tcheke idantifyan ou yo.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePhoneSubmit = async (values: { phone: string }) => {
-    setIsLoading(true);
-    setLoginError(null);
-    try {
-      const formattedPhone = values.phone;
-      setPhoneNumber(formattedPhone);
-      const { error } = await signInWithPhoneNumber(formattedPhone);
-      if (!error) {
-        setIsOtpDialogOpen(true);
+        console.error("Email login error:", error);
+        setLoginError(error.message || "Pa kapab konekte. Tanpri verifye imèl ou ak modpas ou.");
       } else {
-        setLoginError(error.message || "Pa kapab voye kòd OTP. Tanpri eseye ankò.");
+        console.log("Email login successful, redirecting to home");
+        // Successful login, navigate to home page
+        navigate("/");
       }
     } catch (error: any) {
-      console.error("Error during phone login:", error);
-      setLoginError(error.message || "Erè koneksyon. Tanpri eseye ankò.");
+      console.error("Unexpected email login error:", error);
+      setLoginError(error.message || "Pa kapab konekte. Yon erè te rive.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOtpSubmit = async (values: { token: string }) => {
+  const handlePhoneSubmit = async (values: PhoneFormValues) => {
+    console.log("Attempting phone login with:", values.phone);
     setIsLoading(true);
     setLoginError(null);
+    
     try {
-      const { error, user } = await verifyPhoneOTP(phoneNumber, values.token);
-      if (error) throw error;
+      // Clean up and format the phone number
+      const formattedPhone = formatPhoneNumber(values.phone);
+      setPhoneNumber(formattedPhone);
       
-      // Record auth activity if the function exists
-      if (user && recordAuthActivity) {
-        await recordAuthActivity(
-          user.id,
-          'login',
-          'Phone login successful',
-          undefined,
-          navigator.userAgent
-        );
+      const { error } = await signInWithPhoneNumber(formattedPhone);
+      
+      if (error) {
+        console.error("Phone login error:", error);
+        setLoginError(error.message || "Pa kapab voye kòd OTP. Tanpri verifye nimewo telefòn ou.");
+      } else {
+        // Show OTP verification dialog
+        setIsOtpDialogOpen(true);
       }
-      
-      setIsOtpDialogOpen(false);
-      navigate("/");
     } catch (error: any) {
-      console.error("Error during OTP verification:", error);
-      setLoginError(error.message || "Erè verifikasyon. Tanpri eseye ankò.");
+      console.error("Unexpected phone login error:", error);
+      setLoginError(error.message || "Pa kapab konekte. Yon erè te rive.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpSubmit = async (otp: string) => {
+    console.log("Verifying OTP for phone:", phoneNumber);
+    setIsLoading(true);
+    setLoginError(null);
+    
+    try {
+      const { error, user } = await verifyPhoneOTP(phoneNumber, otp);
+      
+      if (error) {
+        console.error("OTP verification error:", error);
+        setLoginError(error.message || "Kòd OTP ou antre a pa valid. Tanpri eseye ankò.");
+      } else {
+        console.log("OTP verification successful, user:", user?.id);
+        // Close OTP dialog
+        setIsOtpDialogOpen(false);
+        
+        // Navigate to home page
+        console.log("Navigating to home page after successful OTP verification");
+        navigate("/");
+      }
+    } catch (error: any) {
+      console.error("Unexpected OTP verification error:", error);
+      setLoginError(error.message || "Pa kapab verifye kòd OTP. Yon erè te rive.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
+    console.log("Attempting Google login");
     setIsLoading(true);
     setLoginError(null);
+    
     try {
-      console.log("Starting Google sign in process");
       const { error } = await signInWithGoogleAccount();
+      
       if (error) {
-        console.error("Google sign in error:", error);
-        throw error;
+        console.error("Google login error:", error);
+        setLoginError(error.message || "Pa kapab konekte ak Google. Tanpri eseye ankò.");
+        setIsLoading(false); // Only set loading to false here if there's an error
       }
-      console.log("Google auth initiated, redirect should happen automatically");
-      // The redirect will be handled by Supabase
+      // If successful, Supabase will redirect the user
     } catch (error: any) {
-      console.error("Error during Google sign in:", error);
-      setLoginError(error.message || "Erè koneksyon Google. Tanpri eseye ankò.");
+      console.error("Unexpected Google login error:", error);
+      setLoginError(error.message || "Pa kapab konekte. Yon erè te rive.");
       setIsLoading(false);
     }
+    // Note: we don't set isLoading to false on success because we're redirecting
   };
 
   const handleFacebookSignIn = async () => {
+    console.log("Attempting Facebook login");
     setIsLoading(true);
     setLoginError(null);
+    
     try {
-      console.log("Starting Facebook sign in process");
       const { error } = await signInWithFacebookAccount();
+      
       if (error) {
-        console.error("Facebook sign in error:", error);
-        throw error;
+        console.error("Facebook login error:", error);
+        setLoginError(error.message || "Pa kapab konekte ak Facebook. Tanpri eseye ankò.");
+        setIsLoading(false);
       }
-      console.log("Facebook auth initiated, redirect should happen automatically");
-      // The redirect will be handled by Supabase
+      // If successful, Supabase will redirect the user
     } catch (error: any) {
-      console.error("Error during Facebook sign in:", error);
-      setLoginError(error.message || "Erè koneksyon Facebook. Tanpri eseye ankò.");
+      console.error("Unexpected Facebook login error:", error);
+      setLoginError(error.message || "Pa kapab konekte. Yon erè te rive.");
       setIsLoading(false);
     }
   };
 
   const handleAppleSignIn = async () => {
+    console.log("Attempting Apple login");
     setIsLoading(true);
     setLoginError(null);
+    
     try {
-      console.log("Starting Apple sign in process");
       const { error } = await signInWithAppleAccount();
+      
       if (error) {
-        console.error("Apple sign in error:", error);
-        throw error;
+        console.error("Apple login error:", error);
+        setLoginError(error.message || "Pa kapab konekte ak Apple. Tanpri eseye ankò.");
+        setIsLoading(false);
       }
-      console.log("Apple auth initiated, redirect should happen automatically");
-      // The redirect will be handled by Supabase
+      // If successful, Supabase will redirect the user
     } catch (error: any) {
-      console.error("Error during Apple sign in:", error);
-      setLoginError(error.message || "Erè koneksyon Apple. Tanpri eseye ankò.");
+      console.error("Unexpected Apple login error:", error);
+      setLoginError(error.message || "Pa kapab konekte. Yon erè te rive.");
       setIsLoading(false);
     }
+  };
+
+  // Helper function to format phone number
+  const formatPhoneNumber = (phone: string): string => {
+    // Remove any non-numeric characters
+    let cleaned = phone.replace(/\D/g, '');
+    
+    // Ensure it has the country code, defaulting to +509 (Haiti) if not provided
+    if (!cleaned.startsWith('509') && !cleaned.startsWith('+509')) {
+      cleaned = `+509${cleaned}`;
+    } else if (cleaned.startsWith('509')) {
+      cleaned = `+${cleaned}`;
+    }
+    
+    return cleaned;
   };
 
   return {

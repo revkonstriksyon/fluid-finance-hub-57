@@ -20,44 +20,45 @@ export const useProfileData = () => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (profileError) {
-        if (profileError.code === 'PGRST116') {
-          console.log("Profile not found, creating one");
-          
-          // Profile doesn't exist, create one
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          
-          if (userError) throw userError;
-          
-          const user = userData?.user;
-          if (!user) throw new Error("User not found");
-          
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert([{
-              id: userId,
-              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'New User',
-              username: user.email?.split('@')[0] || '',
-              joined_date: new Date().toISOString()
-            }]);
-          
-          if (createError) throw createError;
-          
-          // Fetch the newly created profile
-          const { data: newProfileData, error: newProfileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-          
-          if (newProfileError) throw newProfileError;
-          
-          setProfile(newProfileData as Profile);
-        } else {
-          throw profileError;
-        }
+        console.error("Error fetching profile:", profileError);
+        throw profileError;
+      }
+      
+      if (!profileData) {
+        console.log("Profile not found, creating one");
+        
+        // Profile doesn't exist, create one
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) throw userError;
+        
+        const user = userData?.user;
+        if (!user) throw new Error("User not found");
+        
+        const { error: createError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: userId,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'New User',
+            username: user.email?.split('@')[0] || '',
+            joined_date: new Date().toISOString()
+          }]);
+        
+        if (createError) throw createError;
+        
+        // Fetch the newly created profile
+        const { data: newProfileData, error: newProfileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        
+        if (newProfileError) throw newProfileError;
+        
+        setProfile(newProfileData as Profile);
       } else {
         setProfile(profileData as Profile);
       }
@@ -71,6 +72,7 @@ export const useProfileData = () => {
       if (bankError) {
         console.error("Error fetching bank accounts:", bankError);
       } else {
+        console.log("Fetched bank accounts:", bankData?.length || 0);
         setBankAccounts(bankData as BankAccount[]);
       }
       
@@ -88,6 +90,7 @@ export const useProfileData = () => {
   
   const refreshProfile = async (userId: string) => {
     try {
+      console.log("Refreshing profile for user:", userId);
       setUserLoading(true);
       await fetchUserProfile(userId);
     } catch (error) {

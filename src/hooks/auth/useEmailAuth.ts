@@ -35,7 +35,10 @@ export const useEmailAuth = () => {
       }
       
       // Load user profile data immediately after successful login
-      await handleProfileCreation(data.user.id, data.user.user_metadata);
+      const { error: profileError } = await handleProfileCreation(data.user.id, data.user.user_metadata);
+      if (profileError) {
+        console.error("Error creating/updating profile:", profileError);
+      }
       
       toast({
         title: "Koneksyon reyisi",
@@ -61,6 +64,8 @@ export const useEmailAuth = () => {
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
+      console.log("Starting signup process for:", email);
+      
       if (!email || !password || !name) {
         throw new Error("Tout chan yo obligatwa");
       }
@@ -72,27 +77,41 @@ export const useEmailAuth = () => {
           data: {
             full_name: name,
           },
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: `${window.location.origin}/auth/login`
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error during signup:", error);
+        throw error;
+      }
 
-      // If the user is created, we need to update their profile
+      console.log("Signup successful, user data:", data?.user?.id);
+
+      // If the user is created, we need to update their profile immediately
       if (data.user) {
+        console.log("Creating profile for new user:", data.user.id);
+        
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([
+          .upsert([
             {
               id: data.user.id,
               full_name: name,
               username: email.split('@')[0],
               avatar_url: '',
-              phone: '',
+              joined_date: new Date().toISOString(),
             },
-          ]);
+          ], { onConflict: 'id' });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          throw profileError;
+        }
+        
+        console.log("Profile created successfully");
+      } else {
+        console.warn("User object is null after signup");
       }
 
       toast({

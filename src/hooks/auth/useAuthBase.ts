@@ -7,16 +7,24 @@ export const useAuthBase = () => {
 
   const handleProfileCreation = async (userId: string, userMetadata: any) => {
     try {
+      console.log("Handling profile creation for user:", userId);
+      
       // Check if profile exists
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
         
-      if (profileError && profileError.code === 'PGRST116') {
+      if (profileError) {
+        console.error('Error checking profile:', profileError);
+        return { error: profileError };
+      }
+      
+      if (!profileData) {
         // Profile doesn't exist, create one
         console.log("Creating new profile for user:", userId);
+        
         const { error: createError } = await supabase
           .from('profiles')
           .insert([{
@@ -30,9 +38,10 @@ export const useAuthBase = () => {
           console.error('Error creating profile:', createError);
           return { error: createError };
         }
-      } else if (profileError) {
-        console.error('Error checking profile:', profileError);
-        return { error: profileError };
+        
+        console.log("Profile created successfully");
+      } else {
+        console.log("Profile already exists for user:", userId);
       }
       
       return { error: null };

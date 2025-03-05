@@ -10,7 +10,13 @@ import { useAuth } from '@/contexts/auth';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('bank');
-  const { profile, userLoading } = useAuth();
+  const { profile, userLoading, user } = useAuth();
+  
+  console.log("Index page rendered - Auth state:", { 
+    user: !!user, 
+    profile: !!profile, 
+    userLoading 
+  });
   
   // Automatically show the bank section when user logs in
   useEffect(() => {

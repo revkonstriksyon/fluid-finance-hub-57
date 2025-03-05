@@ -38,6 +38,8 @@ const LoginPage = () => {
     }
   }, [user, loading, navigate]);
 
+  console.log("LoginPage render - Auth state:", { user: !!user, loading });
+
   return (
     <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-finance-navy p-4">
       <Card className="w-full max-w-md">
