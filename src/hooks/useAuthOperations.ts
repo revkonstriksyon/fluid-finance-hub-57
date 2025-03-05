@@ -1,7 +1,6 @@
-
 import { useToast } from '@/components/ui/use-toast';
 import { supabase, signInWithPhone, verifyOTP, signInWithGoogle } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 
 export const useAuthOperations = () => {
   const { toast } = useToast();
@@ -27,7 +26,7 @@ export const useAuthOperations = () => {
         description: error.message || "Tanpri tcheke imel ou ak modpas epi eseye ankò.",
         variant: "destructive"
       });
-      throw error;
+      return { user: null, error: error };
     }
   };
 
@@ -75,7 +74,7 @@ export const useAuthOperations = () => {
         description: error.message || "Pa kapab kreye kont ou. Tanpri eseye ankò.",
         variant: "destructive"
       });
-      throw error;
+      return { user: null, session: null, error: error };
     }
   };
 
@@ -177,7 +176,7 @@ export const useAuthOperations = () => {
         description: error.message || "Kòd OTP ou antre a pa valid. Tanpri eseye ankò.",
         variant: "destructive"
       });
-      return { error, user: null };
+      return { error, user: null, session: null };
     }
   };
 

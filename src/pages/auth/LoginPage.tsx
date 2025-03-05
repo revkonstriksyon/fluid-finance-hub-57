@@ -67,7 +67,9 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      const { user } = await signIn(values.email, values.password);
+      const { user, error } = await signIn(values.email, values.password);
+      if (error) throw error;
+      
       console.log("Login successful, user:", user);
       navigate("/");
     } catch (error: any) {
@@ -103,12 +105,10 @@ const LoginPage = () => {
     setLoginError(null);
     try {
       const { error, user, session } = await verifyPhoneOTP(phoneNumber, values.token);
-      if (!error && (user || session)) {
-        setIsOtpDialogOpen(false);
-        navigate("/");
-      } else {
-        setLoginError(error?.message || "Kòd OTP pa valid. Tanpri eseye ankò.");
-      }
+      if (error) throw error;
+      
+      setIsOtpDialogOpen(false);
+      navigate("/");
     } catch (error: any) {
       console.error("Error during OTP verification:", error);
       setLoginError(error.message || "Erè verifikasyon. Tanpri eseye ankò.");
