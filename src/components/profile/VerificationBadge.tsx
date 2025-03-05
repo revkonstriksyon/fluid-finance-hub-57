@@ -1,5 +1,5 @@
 
-import { Shield, CheckCircle } from 'lucide-react';
+import { BadgeCheck, Shield, CheckCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -21,19 +21,22 @@ const VerificationBadge = ({
     : '';
 
   const typeText = {
-    'email': 'Imel Verifye',
+    'email': 'Imèl Verifye',
     'phone': 'Telefòn Verifye',
     'id': 'Idantite Verifye',
     'multiple': 'Kont Verifye'
   };
 
+  // Use green color for verification badges
+  const badgeClasses = "ml-2 bg-green-100 text-green-700 hover:bg-green-200";
+  
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge 
             variant="secondary" 
-            className="ml-2 bg-finance-blue/10 text-finance-blue hover:bg-finance-blue/20"
+            className={badgeClasses}
           >
             {verifiedType === 'email' ? (
               <CheckCircle className="h-3 w-3 mr-1" />
