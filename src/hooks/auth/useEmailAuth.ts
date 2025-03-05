@@ -8,12 +8,15 @@ export const useEmailAuth = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log("Attempting to sign in with email:", email);
       const { error, data } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
         console.error("Login error:", error.message);
         throw error;
       }
+      
+      console.log("Sign in successful, user data:", data);
       
       // Load user profile data immediately after successful login
       if (data.user) {
@@ -27,6 +30,7 @@ export const useEmailAuth = () => {
       
       return { user: data.user, error: null };
     } catch (error: any) {
+      console.error("Sign in error:", error);
       toast({
         title: "Erè koneksyon",
         description: error.message || "Tanpri tcheke imel ou ak modpas epi eseye ankò.",

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -131,12 +132,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    console.log("AuthProvider initialized, checking session...");
     // Get session on initial load
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log("Initial session check:", session ? "Session found" : "No session");
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        console.log("User found in session, fetching profile:", session.user.id);
         fetchUserProfile(session.user.id);
 
         // Record session for the user
@@ -178,8 +182,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("Auth state changed:", _event, session?.user?.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -187,7 +191,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetchUserProfile(session.user.id);
 
         // For login events, record a new session
-        if (_event === 'SIGNED_IN' && authOperations.recordNewSession) {
+        if (event === 'SIGNED_IN' && authOperations.recordNewSession) {
+          console.log("User signed in, recording new session");
           const deviceInfo = getDeviceInfo();
           const location = await estimateLocation();
           const { sessionId } = await authOperations.recordNewSession(
@@ -213,7 +218,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Load active sessions and auth activities
           getActiveSessions();
           getAuthActivity(session.user.id, 10);
-        } else if (_event === 'SIGNED_OUT') {
+        } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out");
           // Record logout activity if we still have the user ID
           if (currentSessionId && authOperations.terminateSession) {
             await authOperations.terminateSession(currentSessionId);

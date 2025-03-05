@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth";
@@ -33,6 +34,7 @@ const LoginPage = () => {
   // Redirect if user is already logged in
   useEffect(() => {
     if (user && !loading) {
+      console.log("User is already logged in, redirecting to home page");
       navigate("/");
     }
   }, [user, loading, navigate]);
@@ -41,8 +43,13 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     try {
+      console.log("Attempting login with email:", values.email);
       const { user, error } = await signIn(values.email, values.password);
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
       
       console.log("Login successful, user:", user);
       
@@ -57,6 +64,7 @@ const LoginPage = () => {
         );
       }
       
+      // Navigate to home page
       navigate("/");
     } catch (error: any) {
       console.error("Error during login:", error);
