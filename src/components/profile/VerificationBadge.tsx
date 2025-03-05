@@ -1,5 +1,5 @@
 
-import { Shield, CheckCircle } from 'lucide-react';
+import { CheckCircle, Shield } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -32,14 +32,10 @@ const VerificationBadge = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge 
-            variant="secondary" 
-            className="ml-2 bg-finance-blue/10 text-finance-blue hover:bg-finance-blue/20"
+            variant="outline" 
+            className="ml-2 bg-green-100 text-green-700 hover:bg-green-200 border-green-300"
           >
-            {verifiedType === 'email' ? (
-              <CheckCircle className="h-3 w-3 mr-1" />
-            ) : (
-              <Shield className="h-3 w-3 mr-1" />
-            )}
+            <CheckCircle className="h-3.5 w-3.5 mr-1 text-green-600" />
             {typeText[verifiedType]}
           </Badge>
         </TooltipTrigger>
