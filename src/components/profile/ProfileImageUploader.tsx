@@ -51,24 +51,32 @@ const ProfileImageUploader = ({ onClose }: { onClose: () => void }) => {
     const file = fileInputRef.current.files[0];
     const fileExt = file.name.split('.').pop();
     const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
+    const filePath = `${fileName}`;
     
     try {
       setUploading(true);
       
       // Upload the file to Supabase storage
-      const { error: uploadError } = await supabase.storage
-        .from('profiles')
-        .upload(filePath, file);
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          upsert: true,
+          cacheControl: '3600'
+        });
         
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Error uploading:", uploadError);
+        throw uploadError;
+      }
       
       // Get the public URL
       const { data: publicURLData } = supabase.storage
-        .from('profiles')
+        .from('avatars')
         .getPublicUrl(filePath);
         
       if (!publicURLData) throw new Error("Erè pandan jwenn URL piblik imaj la");
+      
+      console.log("Image uploaded successfully, public URL:", publicURLData.publicUrl);
       
       // Update the user's profile with the new avatar URL
       const { error: updateError } = await supabase
@@ -79,7 +87,12 @@ const ProfileImageUploader = ({ onClose }: { onClose: () => void }) => {
         })
         .eq('id', user.id);
         
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating profile:", updateError);
+        throw updateError;
+      }
+      
+      console.log("Profile updated successfully with new avatar URL");
       
       // Refresh profile data
       await refreshProfile();

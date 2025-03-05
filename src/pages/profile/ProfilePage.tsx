@@ -13,13 +13,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import ProfileImageUploader from "@/components/profile/ProfileImageUploader";
-import { useNavigate } from "react-router-dom";
 
 const ProfilePage = () => {
-  const { profile, userLoading } = useAuth();
+  const { profile, userLoading, refreshProfile } = useAuth();
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     full_name: "",
@@ -42,8 +40,21 @@ const ProfilePage = () => {
     }
   }, [profile, userLoading]);
 
+  // Manually refresh profile when page loads
+  useEffect(() => {
+    refreshProfile();
+  }, []);
+
   const handleSaveSuccess = () => {
     setIsEditMode(false);
+    // Refresh profile to get latest data
+    refreshProfile();
+  };
+
+  const handleImageDialogClose = () => {
+    setIsImageDialogOpen(false);
+    // Refresh profile to get the updated avatar
+    refreshProfile();
   };
 
   // Loading state
@@ -92,7 +103,7 @@ const ProfilePage = () => {
               Chwazi yon nouvo foto pou pwofil ou.
             </DialogDescription>
           </DialogHeader>
-          <ProfileImageUploader onClose={() => setIsImageDialogOpen(false)} />
+          <ProfileImageUploader onClose={handleImageDialogClose} />
         </DialogContent>
       </Dialog>
     </Layout>
