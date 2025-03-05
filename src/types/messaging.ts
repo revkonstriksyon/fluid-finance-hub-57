@@ -42,7 +42,12 @@ export interface Friend {
     full_name: string | null;
     username: string | null;
     avatar_url: string | null;
-  };
+  } | {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  }[];
 }
 
 export interface UserSearchResult {
