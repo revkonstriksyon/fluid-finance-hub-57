@@ -117,64 +117,6 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
             <CardTitle className="text-base font-medium text-[#2A4D8F]">Enfòmasyon Pèsonèl</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Email with verification badge */}
-            <div className="flex justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Imèl</p>
-                <div className="flex items-center">
-                  <span>{user?.email || 'agaby@example.com'}</span>
-                  {isEmailVerified && <VerificationBadge isVerified={true} verifiedType="email" />}
-                </div>
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div className="flex justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Telefòn</p>
-                <div className="flex items-center">
-                  <PhoneIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{profile?.phone || ''}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="flex justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Lokasyon</p>
-                <div className="flex items-center">
-                  <MapPinIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{profile?.location || ''}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Member Since */}
-            <div className="flex justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Manm Depi</p>
-                <div className="flex items-center text-muted-foreground">
-                  <CalendarIcon className="h-4 w-4 mr-2" />
-                  <span>{joinedDate}</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Profile Information Card */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium text-[#2A4D8F]">Enfòmasyon Pwofil (Piblik)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Biography */}
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Byografi</p>
-              <p>{profile?.bio || ''}</p>
-            </div>
-
             {/* Account Activity */}
             <div className="border-t pt-4 mt-4">
               <div className="flex justify-between text-sm mb-2">
