@@ -21,9 +21,9 @@ const AccountCreate = ({ isOpen, onClose, user, refreshProfile }: AccountCreateP
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Kreye nouvo kont</DialogTitle>
+          <DialogTitle>Kreye nouvo kont EBOUS</DialogTitle>
           <DialogDescription>
-            Antre enfòmasyon pou kreye yon nouvo kont bankè.
+            Antre enfòmasyon pou kreye yon nouvo kont EBOUS.
           </DialogDescription>
         </DialogHeader>
         <AccountCreateForm 

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { DollarSign, KeyRound } from "lucide-react";
+import { KeyRound } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email("Tanpri antre yon adrès imèl valid"),
@@ -42,13 +42,15 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-finance-navy p-4">
+    <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-[#34495e] p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="inline-flex items-center justify-center p-3 rounded-full bg-finance-blue/10">
-              <DollarSign className="h-10 w-10 text-finance-gold" />
-            </div>
+            <img 
+              src="/lovable-uploads/673f9295-ff75-48af-b8f9-f19af98b5360.png" 
+              alt="EBOUS Logo" 
+              className="h-16" 
+            />
           </div>
           <CardTitle className="text-2xl font-bold text-center">Reyinisyalize modpas</CardTitle>
           <CardDescription className="text-center">
@@ -102,7 +104,7 @@ const ResetPasswordPage = () => {
         </CardContent>
         <CardFooter className="flex justify-center">
           <div className="text-center text-sm">
-            <Link to="/auth/login" className="text-finance-blue hover:underline">
+            <Link to="/auth/login" className="text-[#34495e] hover:underline">
               Retounen nan paj koneksyon
             </Link>
           </div>

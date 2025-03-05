@@ -25,10 +25,10 @@ const AccountsList = ({
     return (
       <Card className="col-span-3">
         <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">Ou pa gen okenn kont labank. Ajoute youn pou kòmanse.</p>
+          <p className="text-muted-foreground">Ou pa gen okenn kont EBOUS. Ajoute youn pou kòmanse.</p>
           <Button className="mt-4" onClick={onCreateAccount}>
             <Plus className="h-4 w-4 mr-2" />
-            Ajoute Kont
+            Ajoute Kont EBOUS
           </Button>
         </CardContent>
       </Card>
