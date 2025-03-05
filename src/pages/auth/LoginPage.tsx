@@ -40,6 +40,13 @@ const LoginPage = () => {
 
   console.log("LoginPage render - Auth state:", { user: !!user, loading });
 
+  // Create a wrapper function to match the expected type
+  const handleOtpVerification = async (values: { token?: string }) => {
+    if (values.token) {
+      await handleOtpSubmit(values.token);
+    }
+  };
+
   return (
     <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-finance-navy p-4">
       <Card className="w-full max-w-md">
@@ -73,7 +80,7 @@ const LoginPage = () => {
         isOpen={isOtpDialogOpen}
         onOpenChange={setIsOtpDialogOpen}
         phoneNumber={phoneNumber}
-        onSubmit={handleOtpSubmit}
+        onSubmit={handleOtpVerification}
         isLoading={isLoading}
         error={loginError}
       />

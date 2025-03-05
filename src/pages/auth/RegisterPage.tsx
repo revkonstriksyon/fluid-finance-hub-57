@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -114,6 +113,8 @@ const RegisterPage = () => {
         title: "Kont kreye",
         description: "Ou kapab konekte kounye a avèk nouvo kont ou.",
       });
+      
+      // Redirect to login page after successful account creation
       navigate("/auth/login");
     } catch (error) {
       console.error("Error during registration:", error);
@@ -197,7 +198,9 @@ const RegisterPage = () => {
         }
 
         setIsOtpDialogOpen(false);
-        navigate("/");
+        
+        // Redirect to login page after successful registration
+        navigate("/auth/login");
       } else {
         toast({
           title: "Erè verifikasyon",

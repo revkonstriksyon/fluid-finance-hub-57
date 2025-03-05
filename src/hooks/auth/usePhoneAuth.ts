@@ -46,8 +46,10 @@ export const usePhoneAuth = () => {
         console.log("Creating/updating profile for user:", data.user.id);
         
         const metadata = {
-          ...data.user.user_metadata,
-          phone: phone
+          phone: phone,
+          // The previous implementation expected full_name but we're not providing it
+          // We'll get it from user_metadata if available or use a default
+          full_name: data.user.user_metadata?.full_name || 'New User',
         };
         
         const { error: profileError } = await supabase
@@ -55,7 +57,7 @@ export const usePhoneAuth = () => {
           .upsert([{
             id: data.user.id,
             phone: phone,
-            full_name: metadata.full_name || 'New User',
+            full_name: metadata.full_name,
             username: phone.replace(/\D/g, ''),
             joined_date: new Date().toISOString()
           }], { onConflict: 'id' });
