@@ -5,7 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LogIn } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { LogIn, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
 const emailFormSchema = z.object({
   email: z.string().email("Tanpri antre yon adrès imèl valid"),
@@ -17,9 +19,18 @@ export type EmailFormValues = z.infer<typeof emailFormSchema>;
 interface EmailLoginFormProps {
   onSubmit: (values: EmailFormValues) => Promise<void>;
   isLoading: boolean;
+  rememberMe?: boolean;
+  onRememberMeChange?: (value: boolean) => void;
 }
 
-const EmailLoginForm = ({ onSubmit, isLoading }: EmailLoginFormProps) => {
+const EmailLoginForm = ({ 
+  onSubmit, 
+  isLoading, 
+  rememberMe = false, 
+  onRememberMeChange 
+}: EmailLoginFormProps) => {
+  const [showPassword, setShowPassword] = useState(false);
+  
   const form = useForm<EmailFormValues>({
     resolver: zodResolver(emailFormSchema),
     defaultValues: {
@@ -50,13 +61,44 @@ const EmailLoginForm = ({ onSubmit, isLoading }: EmailLoginFormProps) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Modpas</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" autoComplete="current-password" {...field} />
-              </FormControl>
+              <div className="relative">
+                <FormControl>
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="••••••••" 
+                    autoComplete="current-password" 
+                    {...field} 
+                  />
+                </FormControl>
+                <button 
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
+        
+        {onRememberMeChange && (
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="remember-me" 
+              checked={rememberMe} 
+              onCheckedChange={(checked) => onRememberMeChange(!!checked)} 
+            />
+            <label 
+              htmlFor="remember-me" 
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Kenbe mwen konekte
+            </label>
+          </div>
+        )}
+        
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <div className="flex items-center">

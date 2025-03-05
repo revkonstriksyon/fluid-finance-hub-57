@@ -8,19 +8,28 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DollarSign, Phone, Mail, AlertCircle } from "lucide-react";
 import { formatPhoneNumber } from "@/utils/phoneUtils";
 
-// Import our new components
+// Import our components
 import EmailLoginForm, { EmailFormValues } from "@/components/auth/EmailLoginForm";
 import PhoneLoginForm, { PhoneFormValues } from "@/components/auth/PhoneLoginForm";
 import OtpVerificationForm, { OtpFormValues } from "@/components/auth/OtpVerificationForm";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 
 const LoginPage = () => {
-  const { signIn, signInWithPhoneNumber, verifyPhoneOTP, signInWithGoogleAccount, user, loading } = useAuth();
+  const { 
+    signIn, 
+    signInWithPhoneNumber, 
+    verifyPhoneOTP, 
+    signInWithGoogleAccount,
+    user, 
+    loading,
+    recordAuthActivity 
+  } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Redirect if user is already logged in
   useEffect(() => {
@@ -37,6 +46,18 @@ const LoginPage = () => {
       if (error) throw error;
       
       console.log("Login successful, user:", user);
+      
+      // Record auth activity
+      if (user && recordAuthActivity) {
+        await recordAuthActivity(
+          user.id,
+          'login',
+          'Email login successful',
+          undefined,
+          navigator.userAgent
+        );
+      }
+      
       navigate("/");
     } catch (error: any) {
       console.error("Error during login:", error);
@@ -70,8 +91,19 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      const { error } = await verifyPhoneOTP(phoneNumber, values.token);
+      const { error, user } = await verifyPhoneOTP(phoneNumber, values.token);
       if (error) throw error;
+      
+      // Record auth activity
+      if (user && recordAuthActivity) {
+        await recordAuthActivity(
+          user.id,
+          'login',
+          'Phone login successful',
+          undefined,
+          navigator.userAgent
+        );
+      }
       
       setIsOtpDialogOpen(false);
       navigate("/");
@@ -92,6 +124,32 @@ const LoginPage = () => {
     } catch (error: any) {
       console.error("Error during Google sign in:", error);
       setLoginError(error.message || "Erè koneksyon Google. Tanpri eseye ankò.");
+      setIsLoading(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    setIsLoading(true);
+    setLoginError(null);
+    try {
+      // Implement Facebook sign in
+      setIsLoading(false);
+    } catch (error: any) {
+      console.error("Error during Facebook sign in:", error);
+      setLoginError(error.message || "Erè koneksyon Facebook. Tanpri eseye ankò.");
+      setIsLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setIsLoading(true);
+    setLoginError(null);
+    try {
+      // Implement Apple sign in
+      setIsLoading(false);
+    } catch (error: any) {
+      console.error("Error during Apple sign in:", error);
+      setLoginError(error.message || "Erè koneksyon Apple. Tanpri eseye ankò.");
       setIsLoading(false);
     }
   };
@@ -135,6 +193,8 @@ const LoginPage = () => {
               <EmailLoginForm 
                 onSubmit={onEmailSubmit} 
                 isLoading={isLoading} 
+                rememberMe={rememberMe}
+                onRememberMeChange={setRememberMe}
               />
             </TabsContent>
             
@@ -143,12 +203,27 @@ const LoginPage = () => {
               <PhoneLoginForm 
                 onSubmit={onPhoneSubmit} 
                 isLoading={isLoading} 
+                rememberMe={rememberMe}
+                onRememberMeChange={setRememberMe}
               />
             </TabsContent>
           </Tabs>
           
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-300 dark:border-gray-700" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-finance-navy px-2 text-gray-500 dark:text-gray-400">
+                Oswa kontinye ak
+              </span>
+            </div>
+          </div>
+          
           <SocialLoginOptions 
-            onGoogleSignIn={handleGoogleSignIn} 
+            onGoogleSignIn={handleGoogleSignIn}
+            onFacebookSignIn={handleFacebookSignIn}
+            onAppleSignIn={handleAppleSignIn}
             isLoading={isLoading} 
           />
         </CardContent>

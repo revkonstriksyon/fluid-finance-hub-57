@@ -1,25 +1,22 @@
 
 import { Button } from "@/components/ui/button";
+import { Facebook, Apple } from "lucide-react";
 
 interface SocialLoginOptionsProps {
   onGoogleSignIn: () => Promise<void>;
+  onFacebookSignIn?: () => Promise<void>;
+  onAppleSignIn?: () => Promise<void>;
   isLoading: boolean;
 }
 
-const SocialLoginOptions = ({ onGoogleSignIn, isLoading }: SocialLoginOptionsProps) => {
+const SocialLoginOptions = ({ 
+  onGoogleSignIn, 
+  onFacebookSignIn, 
+  onAppleSignIn, 
+  isLoading 
+}: SocialLoginOptionsProps) => {
   return (
-    <>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-300 dark:border-gray-700" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white dark:bg-finance-navy px-2 text-gray-500 dark:text-gray-400">
-            Oswa kontinye ak
-          </span>
-        </div>
-      </div>
-      
+    <div className="space-y-3">
       <Button
         variant="outline"
         className="w-full flex items-center justify-center"
@@ -44,9 +41,33 @@ const SocialLoginOptions = ({ onGoogleSignIn, isLoading }: SocialLoginOptionsPro
             fill="#EA4335"
           />
         </svg>
-        Konekte ak Google
+        Kontinye ak Google
       </Button>
-    </>
+      
+      {onFacebookSignIn && (
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center"
+          onClick={onFacebookSignIn}
+          disabled={isLoading}
+        >
+          <Facebook className="w-5 h-5 mr-2 text-[#1877F2]" />
+          Kontinye ak Facebook
+        </Button>
+      )}
+      
+      {onAppleSignIn && (
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center"
+          onClick={onAppleSignIn}
+          disabled={isLoading}
+        >
+          <Apple className="w-5 h-5 mr-2" />
+          Kontinye ak Apple
+        </Button>
+      )}
+    </div>
   );
 };
 
