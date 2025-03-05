@@ -1,4 +1,4 @@
-<lov-code>
+
 import { useState, useEffect } from 'react';
 import { MessageSquare, Plus, UserPlus, X, Search, Check, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessaging } from "@/hooks/useMessaging";
-import { Friend, UserSearchResult, FriendProfile } from "@/types/messaging";
+import { Friend, UserSearchResult } from "@/types/messaging";
 import { Loader2 } from "lucide-react";
 
 const FriendsTab = () => {
@@ -29,7 +29,7 @@ const FriendsTab = () => {
   const [loadingAllUsers, setLoadingAllUsers] = useState(false);
 
   // Helper function to get friend profile data safely
-  const getFriendProfile = (friend: Friend): FriendProfile => {
+  const getFriendProfile = (friend: Friend) => {
     if (!friend.friend) {
       return {
         id: friend.friend_id,
@@ -867,3 +867,55 @@ const FriendsTab = () => {
                               : "??"}
                           </AvatarFallback>
                         </Avatar>
+                        
+                        <div className="flex-1">
+                          <p className="font-medium">{user.full_name || "Itilizatè"}</p>
+                          <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
+                            @{user.username || "username"}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          {user.isFriend ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => startConversation(user.id)}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-2" />
+                              Mesaj
+                            </Button>
+                          ) : user.friendStatus === 'pending' ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              disabled
+                            >
+                              <Clock className="h-4 w-4 mr-2" />
+                              Annatant
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => sendFriendRequest(user.id)}
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Ajoute
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default FriendsTab;
