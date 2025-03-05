@@ -7,18 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  PencilIcon, 
   PhoneIcon, 
   MapPinIcon, 
   CalendarIcon, 
   ClockIcon,
   ImageIcon,
-  InfoIcon
 } from "lucide-react";
 
 const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
   const { profile, user, bankAccounts } = useAuth();
-  const [showBiographyPrompt, setShowBiographyPrompt] = useState(false);
   
   // Check if user email is verified
   const isEmailVerified = user?.email_confirmed_at ? true : false;
@@ -116,13 +113,8 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
       <div className="md:col-span-3 space-y-6">
         {/* Personal Information Card */}
         <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium text-[#2A4D8F]">Enfòmasyon Pèsonèl</CardTitle>
-            {onEdit && (
-              <Button variant="ghost" size="sm" onClick={onEdit} className="h-8 px-2">
-                <PencilIcon className="h-4 w-4" />
-              </Button>
-            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Full Name */}
@@ -150,7 +142,7 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
                 <p className="text-sm text-muted-foreground">Telefòn</p>
                 <div className="flex items-center">
                   <PhoneIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{profile?.phone || <span className="text-muted-foreground italic">Pa ranpli</span>}</span>
+                  <span>{profile?.phone || ''}</span>
                 </div>
               </div>
             </div>
@@ -161,7 +153,7 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
                 <p className="text-sm text-muted-foreground">Lokasyon</p>
                 <div className="flex items-center">
                   <MapPinIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{profile?.location || <span className="text-muted-foreground italic">Pa ranpli</span>}</span>
+                  <span>{profile?.location || ''}</span>
                 </div>
               </div>
             </div>
@@ -181,13 +173,8 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
 
         {/* Profile Information Card */}
         <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium text-[#2A4D8F]">Enfòmasyon Pwofil (Piblik)</CardTitle>
-            {onEdit && (
-              <Button variant="ghost" size="sm" onClick={onEdit} className="h-8 px-2">
-                <PencilIcon className="h-4 w-4" />
-              </Button>
-            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Username */}
