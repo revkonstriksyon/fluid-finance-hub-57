@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, LogIn, Phone, Mail } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DollarSign, LogIn, Phone, Mail, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
 
 const emailFormSchema = z.object({
   email: z.string().email("Tanpri antre yon adrès imèl valid"),
@@ -36,6 +38,8 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailFormSchema),
@@ -61,11 +65,14 @@ const LoginPage = () => {
 
   const onEmailSubmit = async (values: EmailFormValues) => {
     setIsLoading(true);
+    setLoginError(null);
     try {
-      await signIn(values.email, values.password);
+      const { user } = await signIn(values.email, values.password);
+      console.log("Login successful, user:", user);
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during login:", error);
+      setLoginError(error.message || "Erè koneksyon. Tanpri tcheke idantifyan ou yo.");
     } finally {
       setIsLoading(false);
     }
@@ -73,15 +80,19 @@ const LoginPage = () => {
 
   const onPhoneSubmit = async (values: PhoneFormValues) => {
     setIsLoading(true);
+    setLoginError(null);
     try {
       const formattedPhone = formatPhoneNumber(values.phone);
       setPhoneNumber(formattedPhone);
       const { error } = await signInWithPhoneNumber(formattedPhone);
       if (!error) {
         setIsOtpDialogOpen(true);
+      } else {
+        setLoginError(error.message || "Pa kapab voye kòd OTP. Tanpri eseye ankò.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during phone login:", error);
+      setLoginError(error.message || "Erè koneksyon. Tanpri eseye ankò.");
     } finally {
       setIsLoading(false);
     }
@@ -89,14 +100,18 @@ const LoginPage = () => {
 
   const onOtpSubmit = async (values: OtpFormValues) => {
     setIsLoading(true);
+    setLoginError(null);
     try {
-      const { error, user } = await verifyPhoneOTP(phoneNumber, values.token);
-      if (!error && user) {
+      const { error, user, session } = await verifyPhoneOTP(phoneNumber, values.token);
+      if (!error && (user || session)) {
         setIsOtpDialogOpen(false);
         navigate("/");
+      } else {
+        setLoginError(error?.message || "Kòd OTP pa valid. Tanpri eseye ankò.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during OTP verification:", error);
+      setLoginError(error.message || "Erè verifikasyon. Tanpri eseye ankò.");
     } finally {
       setIsLoading(false);
     }
@@ -104,11 +119,13 @@ const LoginPage = () => {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    setLoginError(null);
     try {
       await signInWithGoogleAccount();
       // The redirect will be handled by Supabase
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during Google sign in:", error);
+      setLoginError(error.message || "Erè koneksyon Google. Tanpri eseye ankò.");
       setIsLoading(false);
     }
   };
@@ -142,6 +159,13 @@ const LoginPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {loginError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{loginError}</AlertDescription>
+            </Alert>
+          )}
+        
           <Tabs defaultValue="email" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="email" className="flex items-center">
@@ -154,6 +178,7 @@ const LoginPage = () => {
               </TabsTrigger>
             </TabsList>
             
+            {/* Email Tab Content */}
             <TabsContent value="email" className="space-y-4 mt-4">
               <Form {...emailForm}>
                 <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
@@ -164,7 +189,7 @@ const LoginPage = () => {
                       <FormItem>
                         <FormLabel>Imèl</FormLabel>
                         <FormControl>
-                          <Input placeholder="imel@egzanp.com" {...field} />
+                          <Input placeholder="imel@egzanp.com" autoComplete="email" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -177,7 +202,7 @@ const LoginPage = () => {
                       <FormItem>
                         <FormLabel>Modpas</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
+                          <Input type="password" placeholder="••••••••" autoComplete="current-password" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -200,6 +225,7 @@ const LoginPage = () => {
               </Form>
             </TabsContent>
             
+            {/* Phone Tab Content */}
             <TabsContent value="phone" className="space-y-4 mt-4">
               <Form {...phoneForm}>
                 <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
@@ -210,7 +236,7 @@ const LoginPage = () => {
                       <FormItem>
                         <FormLabel>Nimewo Telefòn</FormLabel>
                         <FormControl>
-                          <Input placeholder="+509 XXXX XXXX" {...field} />
+                          <Input placeholder="+509 XXXX XXXX" autoComplete="tel" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -295,6 +321,12 @@ const LoginPage = () => {
               Nou voye yon kòd verifikasyon nan {phoneNumber}. Tanpri antre li anba a.
             </DialogDescription>
           </DialogHeader>
+          {loginError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{loginError}</AlertDescription>
+            </Alert>
+          )}
           <Form {...otpForm}>
             <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-4">
               <FormField

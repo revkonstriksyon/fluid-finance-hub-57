@@ -8,12 +8,19 @@ export const useAuthOperations = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        console.error("Login error:", error.message);
+        throw error;
+      }
+      
       toast({
         title: "Koneksyon reyisi",
         description: "Ou konekte nan kont ou.",
       });
+      
+      return { user: data.user, error: null };
     } catch (error: any) {
       toast({
         title: "Erè koneksyon",
@@ -32,7 +39,8 @@ export const useAuthOperations = () => {
         options: {
           data: {
             full_name: name,
-          }
+          },
+          emailRedirectTo: window.location.origin
         }
       });
 
@@ -57,8 +65,10 @@ export const useAuthOperations = () => {
 
       toast({
         title: "Kont kreye",
-        description: "Tcheke imel ou pou konfime kont ou.",
+        description: data.session ? "Ou kapab konekte kounye a." : "Tcheke imel ou pou konfime kont ou.",
       });
+      
+      return { user: data.user, session: data.session, error: null };
     } catch (error: any) {
       toast({
         title: "Erè enskripsyon",
@@ -160,7 +170,7 @@ export const useAuthOperations = () => {
         title: "Verifikasyon reyisi",
         description: "Ou konekte ak kont ou.",
       });
-      return { error: null, user: data?.user || null };
+      return { error: null, user: data?.user || null, session: data?.session || null };
     } catch (error: any) {
       toast({
         title: "Erè verifikasyon",

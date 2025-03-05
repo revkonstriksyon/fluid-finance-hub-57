@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { accountNavItems } from "./accountNavItems";
+import { toast } from "@/components/ui/use-toast";
 
 interface ProfileNavigationProps {
   handleLogout: (e: React.MouseEvent<HTMLAnchorElement>) => Promise<void>;
