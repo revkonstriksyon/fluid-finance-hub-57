@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DollarSign, LogIn, Phone, Mail, AlertCircle } from "lucide-react";
+import { DollarSign, LogIn, Phone, Mail, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -39,6 +39,7 @@ const LoginPage = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
 
   const emailForm = useForm<EmailFormValues>({
@@ -67,8 +68,8 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      const { user } = await signIn(values.email, values.password);
-      console.log("Login successful, user:", user);
+      await signIn(values.email, values.password);
+      console.log("Login successful, navigating to home...");
       navigate("/");
     } catch (error: any) {
       console.error("Error during login:", error);
@@ -201,9 +202,27 @@ const LoginPage = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Modpas</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" autoComplete="current-password" {...field} />
-                        </FormControl>
+                        <div className="relative">
+                          <FormControl>
+                            <Input 
+                              type={showPassword ? "text" : "password"} 
+                              placeholder="••••••••" 
+                              autoComplete="current-password" 
+                              {...field} 
+                            />
+                            <div className="absolute inset-y-0 right-0 flex items-center">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-full"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -10,15 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, UserPlus, Phone, Mail } from "lucide-react";
+import { DollarSign, UserPlus, Phone, Mail, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
+import PasswordStrengthMeter from "@/components/auth/PasswordStrengthMeter";
+import PasswordGenerator from "@/components/auth/PasswordGenerator";
+import { validatePasswordStrength } from "@/utils/passwordUtils";
 
 const emailFormSchema = z.object({
   name: z.string().min(2, "Non dwe gen omwen 2 karaktè"),
   email: z.string().email("Tanpri antre yon adrès imèl valid"),
-  password: z.string().min(6, "Modpas dwe gen omwen 6 karaktè"),
+  password: z.string().refine(
+    (password) => validatePasswordStrength(password).isValid,
+    {
+      message: "Modpas la dwe gen omwen 8 karaktè, yon lèt majiskil, yon chif, ak yon karaktè espesyal",
+    }
+  ),
   confirmPassword: z.string().min(6, "Modpas dwe gen omwen 6 karaktè"),
   location: z.string().optional(),
   bio: z.string().optional(),
@@ -51,6 +60,9 @@ const RegisterPage = () => {
   const [userLocation, setUserLocation] = useState("");
   const [userBio, setUserBio] = useState("");
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
 
   const emailForm = useForm<EmailFormValues>({
@@ -82,8 +94,15 @@ const RegisterPage = () => {
     },
   });
 
+  // Reset error when tab changes
+  useEffect(() => {
+    setRegisterError(null);
+  }, [emailForm.formState.isSubmitSuccessful, phoneForm.formState.isSubmitSuccessful]);
+
   const onEmailSubmit = async (values: EmailFormValues) => {
     setIsLoading(true);
+    setRegisterError(null);
+    
     try {
       await signUp(values.email, values.password, values.name);
       
@@ -114,14 +133,11 @@ const RegisterPage = () => {
         title: "Kont kreye",
         description: "Ou kapab konekte kounye a avèk nouvo kont ou.",
       });
+      
       navigate("/auth/login");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during registration:", error);
-      toast({
-        title: "Erè enskripsyon",
-        description: "Te gen yon erè pandan n'ap kreye kont ou. Tanpri eseye ankò.",
-        variant: "destructive"
-      });
+      setRegisterError(error.message || "Te gen yon erè pandan n'ap kreye kont ou. Tanpri eseye ankò.");
     } finally {
       setIsLoading(false);
     }
@@ -129,6 +145,8 @@ const RegisterPage = () => {
 
   const onPhoneSubmit = async (values: PhoneFormValues) => {
     setIsLoading(true);
+    setRegisterError(null);
+    
     try {
       const formattedPhone = formatPhoneNumber(values.phone);
       setPhoneNumber(formattedPhone);
@@ -144,19 +162,11 @@ const RegisterPage = () => {
           description: "Tanpri tcheke telefòn ou pou kòd verifikasyon an.",
         });
       } else {
-        toast({
-          title: "Erè",
-          description: "Te gen yon erè pandan n'ap voye kòd OTP a. Tanpri eseye ankò.",
-          variant: "destructive"
-        });
+        setRegisterError(error.message || "Te gen yon erè pandan n'ap voye kòd OTP a. Tanpri eseye ankò.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during phone registration:", error);
-      toast({
-        title: "Erè",
-        description: "Te gen yon erè pandan n'ap enskri ou. Tanpri eseye ankò.",
-        variant: "destructive"
-      });
+      setRegisterError(error.message || "Te gen yon erè pandan n'ap enskri ou. Tanpri eseye ankò.");
     } finally {
       setIsLoading(false);
     }
@@ -164,6 +174,8 @@ const RegisterPage = () => {
 
   const onOtpSubmit = async (values: OtpFormValues) => {
     setIsLoading(true);
+    setRegisterError(null);
+    
     try {
       const { error, user } = await verifyPhoneOTP(phoneNumber, values.token);
       if (!error && user) {
@@ -199,19 +211,11 @@ const RegisterPage = () => {
         setIsOtpDialogOpen(false);
         navigate("/");
       } else {
-        toast({
-          title: "Erè verifikasyon",
-          description: "Kòd OTP ou antre a pa valid. Tanpri eseye ankò.",
-          variant: "destructive"
-        });
+        setRegisterError(error?.message || "Kòd OTP ou antre a pa valid. Tanpri eseye ankò.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during OTP verification:", error);
-      toast({
-        title: "Erè",
-        description: "Te gen yon erè pandan n'ap verifye kòd OTP a. Tanpri eseye ankò.",
-        variant: "destructive"
-      });
+      setRegisterError(error.message || "Te gen yon erè pandan n'ap verifye kòd OTP a. Tanpri eseye ankò.");
     } finally {
       setIsLoading(false);
     }
@@ -219,16 +223,14 @@ const RegisterPage = () => {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    setRegisterError(null);
+    
     try {
       await signInWithGoogleAccount();
       // The redirect will be handled by Supabase
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during Google sign in:", error);
-      toast({
-        title: "Erè koneksyon Google",
-        description: "Te gen yon erè pandan n'ap konekte ak Google. Tanpri eseye ankò.",
-        variant: "destructive"
-      });
+      setRegisterError(error.message || "Te gen yon erè pandan n'ap konekte ak Google. Tanpri eseye ankò.");
       setIsLoading(false);
     }
   };
@@ -247,8 +249,13 @@ const RegisterPage = () => {
     return cleaned;
   };
 
+  const handlePasswordGeneration = (password: string) => {
+    emailForm.setValue("password", password);
+    emailForm.setValue("confirmPassword", password);
+  };
+
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-finance-navy p-4">
+    <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-finance-navy p-4 overflow-y-auto">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
@@ -262,6 +269,13 @@ const RegisterPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {registerError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{registerError}</AlertDescription>
+            </Alert>
+          )}
+          
           <Tabs defaultValue="email" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="email" className="flex items-center">
@@ -335,9 +349,36 @@ const RegisterPage = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Modpas</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
+                        <div className="relative">
+                          <FormControl>
+                            <div className="flex">
+                              <Input 
+                                type={showPassword ? "text" : "password"} 
+                                placeholder="••••••••" 
+                                {...field} 
+                                className="pr-20"
+                              />
+                              <div className="absolute inset-y-0 right-0 flex items-center mr-11">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-full px-2"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                              </div>
+                              <div className="absolute inset-y-0 right-0 flex items-center">
+                                <PasswordGenerator 
+                                  onPasswordGenerated={handlePasswordGeneration}
+                                  className="h-full mr-2"
+                                />
+                              </div>
+                            </div>
+                          </FormControl>
+                        </div>
+                        <PasswordStrengthMeter password={field.value} className="mt-2" />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -348,9 +389,26 @@ const RegisterPage = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Konfime Modpas</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
+                        <div className="relative">
+                          <FormControl>
+                            <Input 
+                              type={showConfirmPassword ? "text" : "password"} 
+                              placeholder="••••••••" 
+                              {...field} 
+                            />
+                            <div className="absolute inset-y-0 right-0 flex items-center">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-full"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              >
+                                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -501,6 +559,12 @@ const RegisterPage = () => {
               Nou voye yon kòd verifikasyon nan {phoneNumber}. Tanpri antre li anba a.
             </DialogDescription>
           </DialogHeader>
+          {registerError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{registerError}</AlertDescription>
+            </Alert>
+          )}
           <Form {...otpForm}>
             <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-4">
               <FormField
