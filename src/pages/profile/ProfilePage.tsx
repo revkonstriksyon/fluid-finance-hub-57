@@ -80,7 +80,7 @@ const ProfilePage = () => {
             onSaveSuccess={handleSaveSuccess}
           />
         ) : (
-          <ProfileInfo onEdit={() => setIsImageDialogOpen(true)} />
+          <ProfileInfo onEdit={() => setIsEditMode(true)} onChangePhoto={() => setIsImageDialogOpen(true)} />
         )}
         
         <div className="mt-6 flex justify-end">
