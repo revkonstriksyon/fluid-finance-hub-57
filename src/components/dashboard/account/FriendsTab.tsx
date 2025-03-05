@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MessageSquare, Plus, UserPlus, X, Search, Check, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -329,6 +328,14 @@ const FriendsTab = () => {
     }
   };
 
+  // Add a helper function to programmatically switch tabs
+  const switchToTab = (tabValue: string) => {
+    const tabTrigger = document.querySelector(`[data-value="${tabValue}"]`) as HTMLButtonElement | null;
+    if (tabTrigger) {
+      tabTrigger.click();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="finance-card">
@@ -360,7 +367,7 @@ const FriendsTab = () => {
                 <Button 
                   variant="outline" 
                   className="mt-4"
-                  onClick={() => document.querySelector('[data-value="add"]')?.click()}
+                  onClick={() => switchToTab("add")}
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   Ajoute Zanmi
