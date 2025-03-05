@@ -7,6 +7,10 @@ import { useAuthOperations } from '@/hooks/useAuthOperations';
 import { useToast } from '@/components/ui/use-toast';
 import AuthContext from './AuthContext';
 import { ActiveSession, AuthActivity } from '@/types/auth';
+import { useDeviceInfo } from '@/hooks/auth/useDeviceInfo';
+import { useSessionInitialization } from '@/hooks/auth/useSessionInitialization';
+import { useAuthStateChange } from '@/hooks/auth/useAuthStateChange';
+import { useSessionHeartbeat } from '@/hooks/auth/useSessionHeartbeat';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -109,28 +113,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: false, error: new Error('terminateAllSessions not available') };
   };
 
-  // Function to handle device information collection
-  const getDeviceInfo = () => {
-    const userAgent = navigator.userAgent;
-    const browserInfo = userAgent.match(/(chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i);
-    const browser = browserInfo ? browserInfo[1] : 'Unknown Browser';
-    const osInfo = userAgent.match(/\(([^)]+)\)/);
-    const os = osInfo ? osInfo[1] : 'Unknown OS';
-    return `${browser} on ${os}`;
-  };
+  // Use our custom hooks
+  const { initializeUserSession } = useSessionInitialization(
+    fetchUserProfile, 
+    authOperations.recordAuthActivity,
+    authOperations.recordNewSession,
+    getActiveSessions,
+    getAuthActivity
+  );
 
-  // Function to estimate location (in production, you would use a geolocation service)
-  const estimateLocation = async () => {
-    try {
-      // In a real app, you would use a geolocation API
-      // This is just a placeholder
-      return "Location inconnue";
-    } catch (error) {
-      console.error("Error getting location:", error);
-      return "Location inconnue";
-    }
-  };
+  const { handleAuthChange } = useAuthStateChange(
+    fetchUserProfile,
+    authOperations.recordAuthActivity,
+    authOperations.recordNewSession,
+    authOperations.terminateSession,
+    getActiveSessions,
+    getAuthActivity
+  );
 
+  // Monitor session activity with a heartbeat
+  useSessionHeartbeat(user, currentSessionId, authOperations.updateSessionActivity);
+
+  // Initialize auth state and listen for changes
   useEffect(() => {
     console.log("AuthProvider initialized, checking session...");
     // Get session on initial load
@@ -141,37 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (session?.user) {
         console.log("User found in session, fetching profile:", session.user.id);
-        fetchUserProfile(session.user.id);
-
-        // Record session for the user
-        if (authOperations.recordNewSession) {
-          const deviceInfo = getDeviceInfo();
-          const location = await estimateLocation();
-          const { sessionId } = await authOperations.recordNewSession(
-            session.user.id,
-            deviceInfo,
-            location
-          );
-          if (sessionId) {
-            setCurrentSessionId(sessionId);
-          }
+        const sessionId = await initializeUserSession(session.user);
+        if (sessionId) {
+          setCurrentSessionId(sessionId);
         }
-
-        // Record login activity
-        if (authOperations.recordAuthActivity) {
-          const deviceInfo = getDeviceInfo();
-          await authOperations.recordAuthActivity(
-            session.user.id,
-            'login',
-            'User logged in',
-            undefined,
-            deviceInfo
-          );
-        }
-
-        // Load active sessions and auth activities
-        getActiveSessions();
-        getAuthActivity(session.user.id, 10);
       } else {
         // User logged out
         setActiveSessions([]);
@@ -188,49 +165,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await fetchUserProfile(session.user.id);
-
-        // For login events, record a new session
-        if (event === 'SIGNED_IN' && authOperations.recordNewSession) {
-          console.log("User signed in, recording new session");
-          const deviceInfo = getDeviceInfo();
-          const location = await estimateLocation();
-          const { sessionId } = await authOperations.recordNewSession(
-            session.user.id,
-            deviceInfo,
-            location
-          );
-          if (sessionId) {
-            setCurrentSessionId(sessionId);
-          }
-
-          // Record login activity
-          if (authOperations.recordAuthActivity) {
-            await authOperations.recordAuthActivity(
-              session.user.id,
-              'login',
-              'User logged in',
-              undefined,
-              deviceInfo
-            );
-          }
-
-          // Load active sessions and auth activities
-          getActiveSessions();
-          getAuthActivity(session.user.id, 10);
-        } else if (event === 'SIGNED_OUT') {
-          console.log("User signed out");
-          // Record logout activity if we still have the user ID
-          if (currentSessionId && authOperations.terminateSession) {
-            await authOperations.terminateSession(currentSessionId);
-          }
-          
-          setActiveSessions([]);
-          setAuthActivities([]);
-          setCurrentSessionId(null);
+        const sessionId = await handleAuthChange(event, session.user, currentSessionId);
+        if (sessionId) {
+          setCurrentSessionId(sessionId);
         }
-      } else {
-        // User logged out or session expired
+      } else if (event === 'SIGNED_OUT') {
+        setActiveSessions([]);
+        setAuthActivities([]);
+        setCurrentSessionId(null);
         setLoading(false);
       }
     });
@@ -238,24 +180,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Clean up subscription
     return () => subscription.unsubscribe();
   }, []);
-
-  // Periodic session activity update (heartbeat)
-  useEffect(() => {
-    let heartbeatInterval: number;
-    
-    if (user && currentSessionId && authOperations.updateSessionActivity) {
-      // Update session activity every 5 minutes
-      heartbeatInterval = window.setInterval(() => {
-        authOperations.updateSessionActivity(currentSessionId);
-      }, 5 * 60 * 1000);
-    }
-    
-    return () => {
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-      }
-    };
-  }, [user, currentSessionId, authOperations.updateSessionActivity]);
 
   // Redirect to profile page after successful login
   useEffect(() => {
@@ -265,8 +189,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Byenveni, " + (profile.full_name || ""),
         description: "Ou konekte nan kont ou.",
       });
-      
-      // We can add navigation here if needed in the future
     }
   }, [user, loading, profile, userLoading]);
 
