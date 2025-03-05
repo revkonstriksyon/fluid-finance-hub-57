@@ -1,34 +1,80 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
-import { LoginTabs } from "@/components/auth/login/LoginTabs";
-import { EmailFormValues } from "@/components/auth/login/EmailLoginForm";
-import { PhoneFormValues } from "@/components/auth/login/PhoneLoginForm";
-import { OtpVerificationDialog } from "@/components/auth/OtpVerificationDialog";
-import { AuthCardWrapper } from "@/components/auth/AuthCardWrapper";
-import { formatPhoneNumber } from "@/components/auth/utils/phoneUtils";
+import { useAuth } from "@/contexts/auth";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DollarSign, Phone, Mail, AlertCircle } from "lucide-react";
+import { formatPhoneNumber } from "@/utils/phoneUtils";
+
+// Import our components
+import EmailLoginForm, { EmailFormValues } from "@/components/auth/EmailLoginForm";
+import PhoneLoginForm, { PhoneFormValues } from "@/components/auth/PhoneLoginForm";
+import OtpVerificationForm, { OtpFormValues } from "@/components/auth/OtpVerificationForm";
+import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 
 const LoginPage = () => {
-  const { signIn, signInWithPhoneNumber, verifyPhoneOTP, signInWithGoogleAccount } = useAuth();
+  const { 
+    signIn, 
+    signInWithPhoneNumber, 
+    verifyPhoneOTP, 
+    signInWithGoogleAccount,
+    signInWithFacebookAccount,
+    signInWithAppleAccount,
+    user, 
+    loading,
+    recordAuthActivity 
+  } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      console.log("User is already logged in, redirecting to home page");
+      navigate("/");
+    }
+  }, [user, loading, navigate]);
 
   const onEmailSubmit = async (values: EmailFormValues) => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      const { user, error } = await signIn(values.email, values.password);
-      if (error) throw error;
-      if (user) {
-        console.log("Login successful, navigating to home...");
-        navigate("/");
+      console.log("Attempting login with email:", values.email);
+      const { user, error, session } = await signIn(values.email, values.password);
+      
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
       }
+      
+      if (!user || !session) {
+        console.error("Login successful but no user or session returned");
+        throw new Error("Erè koneksyon. Pa gen itilizatè oswa sesyon retounen");
+      }
+      
+      console.log("Login successful, user:", user.id);
+      console.log("Session is valid:", !!session);
+      
+      // Record auth activity if the function exists
+      if (user && recordAuthActivity) {
+        await recordAuthActivity(
+          user.id,
+          'login',
+          'Email login successful',
+          undefined,
+          navigator.userAgent
+        );
+      }
+      
+      // Navigate to home page
+      console.log("Redirecting to home page");
+      navigate("/");
     } catch (error: any) {
       console.error("Error during login:", error);
       setLoginError(error.message || "Erè koneksyon. Tanpri tcheke idantifyan ou yo.");
@@ -57,17 +103,26 @@ const LoginPage = () => {
     }
   };
 
-  const onOtpSubmit = async (values: { token: string }) => {
+  const onOtpSubmit = async (values: OtpFormValues) => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      const { error, user, session } = await verifyPhoneOTP(phoneNumber, values.token);
-      if (!error && (user || session)) {
-        setIsOtpDialogOpen(false);
-        navigate("/");
-      } else {
-        setLoginError(error?.message || "Kòd OTP pa valid. Tanpri eseye ankò.");
+      const { error, user } = await verifyPhoneOTP(phoneNumber, values.token);
+      if (error) throw error;
+      
+      // Record auth activity if the function exists
+      if (user && recordAuthActivity) {
+        await recordAuthActivity(
+          user.id,
+          'login',
+          'Phone login successful',
+          undefined,
+          navigator.userAgent
+        );
       }
+      
+      setIsOtpDialogOpen(false);
+      navigate("/");
     } catch (error: any) {
       console.error("Error during OTP verification:", error);
       setLoginError(error.message || "Erè verifikasyon. Tanpri eseye ankò.");
@@ -80,7 +135,13 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      await signInWithGoogleAccount();
+      console.log("Starting Google sign in process");
+      const { error } = await signInWithGoogleAccount();
+      if (error) {
+        console.error("Google sign in error:", error);
+        throw error;
+      }
+      console.log("Google auth initiated, redirect should happen automatically");
       // The redirect will be handled by Supabase
     } catch (error: any) {
       console.error("Error during Google sign in:", error);
@@ -89,47 +150,141 @@ const LoginPage = () => {
     }
   };
 
-  const footerContent = (
-    <>
-      <div className="text-center text-sm">
-        <Link to="/auth/reset-password" className="text-finance-blue hover:underline">
-          Bliye modpas ou?
-        </Link>
-      </div>
-      <div className="text-center text-sm">
-        <span className="text-muted-foreground">Pa gen yon kont? </span>
-        <Link to="/auth/register" className="text-finance-blue hover:underline">
-          Kreye yon kont
-        </Link>
-      </div>
-    </>
-  );
+  const handleFacebookSignIn = async () => {
+    setIsLoading(true);
+    setLoginError(null);
+    try {
+      console.log("Starting Facebook sign in process");
+      const { error } = await signInWithFacebookAccount();
+      if (error) {
+        console.error("Facebook sign in error:", error);
+        throw error;
+      }
+      console.log("Facebook auth initiated, redirect should happen automatically");
+      // The redirect will be handled by Supabase
+    } catch (error: any) {
+      console.error("Error during Facebook sign in:", error);
+      setLoginError(error.message || "Erè koneksyon Facebook. Tanpri eseye ankò.");
+      setIsLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setIsLoading(true);
+    setLoginError(null);
+    try {
+      console.log("Starting Apple sign in process");
+      const { error } = await signInWithAppleAccount();
+      if (error) {
+        console.error("Apple sign in error:", error);
+        throw error;
+      }
+      console.log("Apple auth initiated, redirect should happen automatically");
+      // The redirect will be handled by Supabase
+    } catch (error: any) {
+      console.error("Error during Apple sign in:", error);
+      setLoginError(error.message || "Erè koneksyon Apple. Tanpri eseye ankò.");
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <>
-      <AuthCardWrapper 
-        title="Konekte" 
-        description="Antre detay ou pou kontinye nan Fluid Finance"
-        error={loginError}
-        footer={footerContent}
-      >
-        <LoginTabs 
-          onEmailSubmit={onEmailSubmit}
-          onPhoneSubmit={onPhoneSubmit}
-          onGoogleSignIn={handleGoogleSignIn}
-          isLoading={isLoading}
-        />
-      </AuthCardWrapper>
+    <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-finance-navy p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <div className="flex justify-center mb-4">
+            <div className="inline-flex items-center justify-center p-3 rounded-full bg-finance-blue/10">
+              <DollarSign className="h-10 w-10 text-finance-gold" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">Konekte</CardTitle>
+          <CardDescription className="text-center">
+            Antre detay ou pou kontinye nan EBOUS
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loginError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{loginError}</AlertDescription>
+            </Alert>
+          )}
+        
+          <Tabs defaultValue="email" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="email" className="flex items-center">
+                <Mail className="mr-2 h-4 w-4" />
+                Imèl
+              </TabsTrigger>
+              <TabsTrigger value="phone" className="flex items-center">
+                <Phone className="mr-2 h-4 w-4" />
+                Telefòn
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Email Tab Content */}
+            <TabsContent value="email" className="space-y-4 mt-4">
+              <EmailLoginForm 
+                onSubmit={onEmailSubmit} 
+                isLoading={isLoading} 
+                rememberMe={rememberMe}
+                onRememberMeChange={setRememberMe}
+              />
+            </TabsContent>
+            
+            {/* Phone Tab Content */}
+            <TabsContent value="phone" className="space-y-4 mt-4">
+              <PhoneLoginForm 
+                onSubmit={onPhoneSubmit} 
+                isLoading={isLoading} 
+                rememberMe={rememberMe}
+                onRememberMeChange={setRememberMe}
+              />
+            </TabsContent>
+          </Tabs>
+          
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-300 dark:border-gray-700" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-finance-navy px-2 text-gray-500 dark:text-gray-400">
+                Oswa kontinye ak
+              </span>
+            </div>
+          </div>
+          
+          <SocialLoginOptions 
+            onGoogleSignIn={handleGoogleSignIn}
+            onFacebookSignIn={handleFacebookSignIn}
+            onAppleSignIn={handleAppleSignIn}
+            isLoading={isLoading} 
+          />
+        </CardContent>
+        <CardFooter className="flex justify-center flex-col space-y-4">
+          <div className="text-center text-sm">
+            <Link to="/auth/reset-password" className="text-finance-blue hover:underline">
+              Bliye modpas ou?
+            </Link>
+          </div>
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">Pa gen yon kont? </span>
+            <Link to="/auth/register" className="text-finance-blue hover:underline">
+              Kreye yon kont
+            </Link>
+          </div>
+        </CardFooter>
+      </Card>
       
-      <OtpVerificationDialog 
+      <OtpVerificationForm 
         isOpen={isOtpDialogOpen}
         onOpenChange={setIsOtpDialogOpen}
-        onSubmit={onOtpSubmit}
         phoneNumber={phoneNumber}
+        onSubmit={onOtpSubmit}
         isLoading={isLoading}
         error={loginError}
       />
-    </>
+    </div>
   );
 };
 

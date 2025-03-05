@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth";
 import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileInfo from "@/components/profile/ProfileInfo";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
