@@ -1,18 +1,23 @@
+
 import { useState, useRef, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Send, Loader2 } from "lucide-react";
+import { Search, Send, Loader2, Users, Plus, X } from "lucide-react";
 import { useMessaging } from "@/hooks/useMessaging";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { UserSearchResult } from "@/types/messaging";
+import { useToast } from "@/hooks/use-toast";
 
 const MessagesPage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const {
     conversations, 
     activeConversation, 
@@ -20,10 +25,16 @@ const MessagesPage = () => {
     loading,
     sendingMessage,
     setActiveConversation,
-    sendMessage
+    sendMessage,
+    createConversation
   } = useMessaging();
   const [searchTerm, setSearchTerm] = useState("");
   const [newMessage, setNewMessage] = useState("");
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const [userSearchResults, setUserSearchResults] = useState<UserSearchResult[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -32,6 +43,81 @@ const MessagesPage = () => {
     convo.otherUser?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     convo.otherUser?.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Search for users to message
+  const searchUsers = async (query: string) => {
+    if (!query.trim() || !user) return;
+    
+    try {
+      setSearchingUsers(true);
+      
+      // Search for users by full_name or username
+      const { data: usersData, error: usersError } = await supabase
+        .from("profiles")
+        .select("id, full_name, username, avatar_url")
+        .or(`full_name.ilike.%${query}%,username.ilike.%${query}%`)
+        .neq("id", user.id) // Exclude current user
+        .limit(10);
+      
+      if (usersError) throw usersError;
+      
+      // Get current user's friend list to check friendship status
+      const { data: friendsData, error: friendsError } = await supabase
+        .from("friends")
+        .select("*")
+        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+      
+      if (friendsError) throw friendsError;
+      
+      // Map user results with friendship status
+      const resultsWithFriendStatus = usersData.map(userData => {
+        const friend = friendsData?.find(
+          f => (f.user_id === user.id && f.friend_id === userData.id) || 
+               (f.friend_id === user.id && f.user_id === userData.id)
+        );
+        
+        return {
+          ...userData,
+          isFriend: !!friend && friend.status === "accepted",
+          friendStatus: friend?.status as "pending" | "accepted" | "rejected" | undefined
+        };
+      });
+      
+      setUserSearchResults(resultsWithFriendStatus);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      toast({
+        title: "Erè",
+        description: "Nou pa kapab chèche itilizatè yo",
+        variant: "destructive"
+      });
+    } finally {
+      setSearchingUsers(false);
+    }
+  };
+
+  // Function to start a new conversation
+  const startNewConversation = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      const newConversation = await createConversation(selectedUser.id);
+      
+      if (newConversation) {
+        setShowNewMessageModal(false);
+        setUserSearchTerm("");
+        setUserSearchResults([]);
+        setSelectedUser(null);
+      }
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      toast({
+        title: "Erè",
+        description: "Nou pa kapab kreye yon nouvo konvèsasyon",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Function to get status color
   const getStatusColor = (status?: string) => {
@@ -62,6 +148,19 @@ const MessagesPage = () => {
     setNewMessage("");
   };
 
+  // Search for users when userSearchTerm changes
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (userSearchTerm) {
+        searchUsers(userSearchTerm);
+      } else {
+        setUserSearchResults([]);
+      }
+    }, 300);
+    
+    return () => clearTimeout(delayDebounce);
+  }, [userSearchTerm]);
+
   // Scroll to bottom of messages when new ones arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,6 +173,121 @@ const MessagesPage = () => {
     window.location.href = `/profile/${userId}`;
   };
 
+  // New Message Modal Component
+  const NewMessageModal = () => {
+    if (!showNewMessageModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-finance-navy rounded-lg max-w-md w-full p-4 m-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Nouvo Mesaj</h2>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => {
+                setShowNewMessageModal(false);
+                setUserSearchTerm("");
+                setUserSearchResults([]);
+                setSelectedUser(null);
+              }}
+            >
+              <X size={18} />
+            </Button>
+          </div>
+          
+          <div className="mb-4">
+            {selectedUser ? (
+              <div className="flex items-center justify-between bg-finance-lightGray/70 dark:bg-white/10 p-2 rounded">
+                <div className="flex items-center gap-2">
+                  <Avatar>
+                    <AvatarImage src={selectedUser.avatar_url || ""} />
+                    <AvatarFallback className="bg-finance-blue text-white">
+                      {selectedUser.full_name 
+                        ? selectedUser.full_name.split(' ').map(n => n[0]).join('')
+                        : selectedUser.username?.substring(0, 2) || "??"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{selectedUser.full_name || selectedUser.username}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedUser(null)}
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-finance-charcoal/50 dark:text-white/50 h-4 w-4" />
+                <Input 
+                  placeholder="Chèche itilizatè..." 
+                  className="pl-10"
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          
+          {!selectedUser && userSearchResults.length > 0 && (
+            <div className="max-h-60 overflow-y-auto mb-4">
+              {userSearchResults.map(user => (
+                <div 
+                  key={user.id}
+                  className="flex items-center space-x-3 p-2 hover:bg-finance-lightGray/50 dark:hover:bg-white/5 cursor-pointer rounded"
+                  onClick={() => setSelectedUser(user)}
+                >
+                  <Avatar>
+                    <AvatarImage src={user.avatar_url || ""} />
+                    <AvatarFallback className="bg-finance-blue text-white">
+                      {user.full_name 
+                        ? user.full_name.split(' ').map(n => n[0]).join('')
+                        : user.username?.substring(0, 2) || "??"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{user.full_name || "Itilizatè"}</p>
+                    <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
+                      @{user.username || "username"}
+                    </p>
+                  </div>
+                  {user.isFriend && (
+                    <span className="ml-auto text-xs bg-finance-blue/10 text-finance-blue dark:bg-finance-blue/20 py-1 px-2 rounded-full">
+                      Zanmi
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {!selectedUser && userSearchTerm && userSearchResults.length === 0 && !searchingUsers && (
+            <div className="text-center py-4 text-finance-charcoal/70 dark:text-white/70">
+              Pa gen rezilta pou "{userSearchTerm}"
+            </div>
+          )}
+          
+          {searchingUsers && (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-finance-blue" />
+            </div>
+          )}
+          
+          <div className="flex justify-end">
+            <Button
+              onClick={startNewConversation}
+              disabled={!selectedUser}
+            >
+              Kòmanse Konvèsasyon
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Layout>
       <div className="h-[calc(100vh-5rem)] overflow-hidden">
@@ -81,7 +295,17 @@ const MessagesPage = () => {
           {/* Left sidebar - conversation list */}
           <div className="md:col-span-1 finance-card overflow-hidden flex flex-col">
             <div className="p-4 border-b border-finance-midGray/30 dark:border-white/10">
-              <h1 className="text-xl font-bold mb-3">Mesaj</h1>
+              <div className="flex justify-between items-center mb-3">
+                <h1 className="text-xl font-bold">Mesaj</h1>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowNewMessageModal(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Nouvo
+                </Button>
+              </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-finance-charcoal/50 dark:text-white/50 h-4 w-4" />
                 <Input 
@@ -100,7 +324,16 @@ const MessagesPage = () => {
                 </div>
               ) : filteredConversations.length === 0 ? (
                 <div className="p-4 text-center text-finance-charcoal/70 dark:text-white/70">
-                  Pa gen konvèsasyon pou montre
+                  <p className="mb-2">Pa gen konvèsasyon pou montre</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowNewMessageModal(true)}
+                    className="mx-auto"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Kòmanse yon konvèsasyon
+                  </Button>
                 </div>
               ) : (
                 filteredConversations.map(conversation => {
@@ -257,15 +490,24 @@ const MessagesPage = () => {
               <div className="h-full flex items-center justify-center">
                 <div className="text-center">
                   <h3 className="text-lg font-medium mb-2">Pa gen konvèsasyon ki seleksyone</h3>
-                  <p className="text-finance-charcoal/70 dark:text-white/70">
+                  <p className="text-finance-charcoal/70 dark:text-white/70 mb-4">
                     Chwazi yon konvèsasyon oswa kòmanse yon nouvo konvèsasyon
                   </p>
+                  <Button 
+                    onClick={() => setShowNewMessageModal(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nouvo Mesaj
+                  </Button>
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
+      
+      {/* New Message Modal */}
+      <NewMessageModal />
     </Layout>
   );
 };
