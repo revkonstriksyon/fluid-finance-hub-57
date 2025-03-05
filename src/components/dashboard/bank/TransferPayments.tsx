@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/components/ui/use-toast';
+import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/lib/supabase';
 import { useTransactions } from '@/hooks/useTransactions';
 import { Checkbox } from "@/components/ui/checkbox";
