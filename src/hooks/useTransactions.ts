@@ -37,6 +37,7 @@ export const useTransactions = (userId?: string) => {
         throw error;
       }
 
+      console.log('Fetched transactions:', data);
       setTransactions(data || []);
     } catch (error: any) {
       console.error('Error fetching transactions:', error.message);
@@ -52,6 +53,7 @@ export const useTransactions = (userId?: string) => {
 
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'created_at'>) => {
     try {
+      console.log('Adding transaction:', transaction);
       const { data, error } = await supabase
         .from('transactions')
         .insert([transaction])
@@ -62,6 +64,7 @@ export const useTransactions = (userId?: string) => {
         throw error;
       }
 
+      console.log('Transaction added successfully:', data);
       setTransactions(prev => [data as Transaction, ...prev]);
       
       toast({
