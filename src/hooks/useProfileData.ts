@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Profile, BankAccount } from '@/types/auth';
+import { BankAccount } from '@/types/auth';
+import { Profile } from '@/types/profile';
 
 export const useProfileData = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
