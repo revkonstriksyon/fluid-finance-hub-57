@@ -137,17 +137,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize auth state and listen for changes
   useEffect(() => {
     console.log("AuthProvider initialized, checking session...");
+    let isMounted = true;
+    
     // Get session on initial load
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log("Initial session check:", session ? "Session found" : "No session");
+      
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         console.log("User found in session, fetching profile:", session.user.id);
-        const sessionId = await initializeUserSession(session.user);
-        if (sessionId) {
-          setCurrentSessionId(sessionId);
+        try {
+          // Make sure to call fetchUserProfile directly so we know it's completed
+          await fetchUserProfile(session.user.id);
+          
+          const sessionId = await initializeUserSession(session.user);
+          if (sessionId) {
+            setCurrentSessionId(sessionId);
+          }
+        } catch (error) {
+          console.error("Error initializing session:", error);
         }
       } else {
         // User logged out
@@ -161,13 +173,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
+      
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        const sessionId = await handleAuthChange(event, session.user, currentSessionId);
-        if (sessionId) {
-          setCurrentSessionId(sessionId);
+        console.log("Auth state changed: SIGNED_IN, user:", session.user.id, "currentSessionId:", currentSessionId);
+        try {
+          // Ensure profile is loaded first
+          await fetchUserProfile(session.user.id);
+          
+          const sessionId = await handleAuthChange(event, session.user, currentSessionId);
+          if (sessionId) {
+            setCurrentSessionId(sessionId);
+          }
+        } catch (error) {
+          console.error("Error handling auth change:", error);
+        } finally {
+          // Make sure loading is false even if there was an error
+          setLoading(false);
         }
       } else if (event === 'SIGNED_OUT') {
         setActiveSessions([]);
@@ -178,7 +204,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Clean up subscription
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Redirect to profile page after successful login

@@ -13,6 +13,7 @@ export const useProfileData = () => {
   // Fetch user profile data
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       setUserLoading(true);
       
       // Fetch profile data
@@ -25,6 +26,7 @@ export const useProfileData = () => {
       if (profileError) {
         // If profile doesn't exist, create a new one
         if (profileError.code === 'PGRST116') {
+          console.log("Profile not found, creating new profile");
           const { data: userData } = await supabase.auth.getUser();
           if (userData && userData.user) {
             const newProfile = {
@@ -52,12 +54,15 @@ export const useProfileData = () => {
                 variant: "destructive"
               });
             } else {
+              console.log("New profile created successfully");
               setProfile(newProfileData as Profile);
               toast({
                 title: "Pwofil kreye",
                 description: "Pwofil ou kreye avèk siksè.",
               });
             }
+          } else {
+            console.error("Failed to get user data for profile creation");
           }
         } else {
           console.error('Error fetching profile:', profileError);
@@ -68,6 +73,7 @@ export const useProfileData = () => {
           });
         }
       } else {
+        console.log("Profile fetched successfully:", profileData);
         setProfile(profileData as Profile);
       }
 
@@ -85,10 +91,9 @@ export const useProfileData = () => {
           variant: "destructive"
         });
       } else {
+        console.log("Bank accounts fetched successfully:", accountsData);
         setBankAccounts(accountsData as BankAccount[] || []);
       }
-      
-      // Fetch transactions if needed in future
       
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
@@ -105,7 +110,10 @@ export const useProfileData = () => {
   // Refresh profile data
   const refreshProfile = async (userId: string | undefined) => {
     if (userId) {
+      console.log("Refreshing profile for user:", userId);
       await fetchUserProfile(userId);
+    } else {
+      console.warn("Cannot refresh profile: No user ID provided");
     }
   };
 

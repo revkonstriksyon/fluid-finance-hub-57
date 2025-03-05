@@ -7,7 +7,8 @@ import ProfileInfo from "@/components/profile/ProfileInfo";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 
 const ProfilePage = () => {
-  const { profile, userLoading } = useAuth();
+  const { profile, userLoading, loading, refreshProfile } = useAuth();
+  const [isInitialized, setIsInitialized] = useState(false);
   
   const [formData, setFormData] = useState({
     full_name: "",
@@ -19,7 +20,7 @@ const ProfilePage = () => {
 
   // Initialize form with profile data once loaded
   useEffect(() => {
-    if (profile && !userLoading) {
+    if (profile && !userLoading && !loading) {
       setFormData({
         full_name: profile.full_name || "",
         username: profile.username || "",
@@ -27,11 +28,24 @@ const ProfilePage = () => {
         bio: profile.bio || "",
         phone: profile.phone || "",
       });
+      setIsInitialized(true);
     }
-  }, [profile, userLoading]);
+  }, [profile, userLoading, loading]);
+
+  // Try to refresh profile if stuck in loading state for too long
+  useEffect(() => {
+    if ((userLoading || loading) && !isInitialized) {
+      const timer = setTimeout(() => {
+        console.log("Profile page still loading, attempting to refresh...");
+        refreshProfile();
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [userLoading, loading, isInitialized, refreshProfile]);
 
   // Loading state
-  if (userLoading) {
+  if (userLoading || loading) {
     return (
       <Layout>
         <div className="max-w-4xl mx-auto">

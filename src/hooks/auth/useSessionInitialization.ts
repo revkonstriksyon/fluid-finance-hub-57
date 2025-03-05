@@ -14,42 +14,56 @@ export const useSessionInitialization = (
 
   const initializeUserSession = useCallback(async (user: User) => {
     console.log("Initializing user session for:", user.id);
-    await fetchUserProfile(user.id);
-
-    // Record session for the user
-    if (recordNewSession) {
-      const deviceInfo = getDeviceInfo();
-      const location = await estimateLocation();
-      const { sessionId } = await recordNewSession(
-        user.id,
-        deviceInfo,
-        location
-      );
+    
+    try {
+      // Fetch profile data first
+      await fetchUserProfile(user.id);
       
-      // Record login activity
-      if (recordAuthActivity && sessionId) {
-        await recordAuthActivity(
+      let sessionId = null;
+      
+      // Record session for the user
+      if (recordNewSession) {
+        const deviceInfo = getDeviceInfo();
+        const location = await estimateLocation();
+        const sessionResult = await recordNewSession(
           user.id,
-          'login',
-          'User logged in',
-          undefined,
-          deviceInfo
+          deviceInfo,
+          location
         );
-      }
-
-      // Load active sessions and auth activities
-      if (getActiveSessions) {
-        await getActiveSessions();
-      }
-      
-      if (getAuthActivity) {
-        await getAuthActivity(user.id, 10);
+        
+        if (sessionResult.error) {
+          console.error("Error recording new session:", sessionResult.error);
+        } else {
+          sessionId = sessionResult.sessionId;
+          
+          // Record login activity
+          if (recordAuthActivity && sessionId) {
+            await recordAuthActivity(
+              user.id,
+              'login',
+              'User logged in',
+              undefined,
+              deviceInfo
+            );
+          }
+          
+          // Load active sessions and auth activities
+          if (getActiveSessions) {
+            await getActiveSessions();
+          }
+          
+          if (getAuthActivity) {
+            await getAuthActivity(user.id, 10);
+          }
+        }
       }
       
       return sessionId;
+    } catch (error) {
+      console.error("Error initializing user session:", error);
+      // Even if there's an error, return null to allow the auth flow to continue
+      return null;
     }
-    
-    return null;
   }, [fetchUserProfile, recordNewSession, recordAuthActivity, getActiveSessions, getAuthActivity, getDeviceInfo, estimateLocation]);
 
   return {
