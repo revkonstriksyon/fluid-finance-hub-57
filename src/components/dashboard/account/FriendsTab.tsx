@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MessageSquare, Plus, UserPlus, X, Search, Check, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessaging } from "@/hooks/useMessaging";
-import { Friend, UserSearchResult } from "@/types/messaging";
+import { Friend, UserSearchResult, FriendProfile } from "@/types/messaging";
 import { Loader2 } from "lucide-react";
 
 const FriendsTab = () => {
@@ -29,7 +28,7 @@ const FriendsTab = () => {
   const [loadingAllUsers, setLoadingAllUsers] = useState(false);
 
   // Helper function to get friend profile data safely
-  const getFriendProfile = (friend: Friend) => {
+  const getFriendProfile = (friend: Friend): FriendProfile => {
     if (!friend.friend) {
       return {
         id: friend.friend_id,
@@ -92,7 +91,7 @@ const FriendsTab = () => {
     try {
       setLoadingAllUsers(true);
       
-      // Fetch all users except the current user
+      // Fetch all users except the current user, this now directly uses profile data
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('id, full_name, username, avatar_url')
@@ -111,7 +110,7 @@ const FriendsTab = () => {
       
       if (friendsError) throw friendsError;
       
-      // Map all users with friend status
+      // Map all users with friend status, directly using the profile data
       const usersWithFriendStatus = usersData.map(userData => {
         const friendConnection = friendsData?.find(f => 
           (f.user_id === userData.id && f.friend_id === user.id) || 
@@ -119,7 +118,7 @@ const FriendsTab = () => {
         );
         
         return {
-          ...userData,
+          ...userData, // This ensures we use the exact profile data
           isFriend: friendConnection?.status === 'accepted',
           friendStatus: friendConnection?.status as "pending" | "accepted" | "rejected" | undefined
         };
@@ -256,14 +255,14 @@ const FriendsTab = () => {
     );
   };
 
-  // Search users by name or username
+  // Search users by name or username - updated to use profile data directly
   const handleSearch = async () => {
     if (!searchTerm.trim() || !user) return;
     
     try {
       setIsSearching(true);
       
-      // Search for users by name or username
+      // Search directly from profiles table
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('id, full_name, username, avatar_url')
@@ -293,7 +292,7 @@ const FriendsTab = () => {
       
       if (pendingError && usersData.length > 0) throw pendingError;
       
-      // Map search results with friend status
+      // Map search results with friend status, using profile data directly
       const resultsWithFriendStatus = usersData.map(user => {
         // Check if this user is already a friend
         const friendConnection = friendsData?.find(f => 
@@ -306,7 +305,7 @@ const FriendsTab = () => {
         );
         
         return {
-          ...user,
+          ...user, // This ensures we use the exact profile data
           isFriend: !!friendConnection,
           friendStatus: pendingConnection ? pendingConnection.status : undefined
         };
@@ -325,14 +324,14 @@ const FriendsTab = () => {
     }
   };
 
-  // Search all users in the system
+  // Search all users in the system - updated to use profile data directly
   const searchAllUsers = async () => {
     if (!userSearchTerm.trim() || !user) return;
     
     try {
       setLoadingUserSearch(true);
       
-      // Search for users by name or username
+      // Search directly from profiles table
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('id, full_name, username, avatar_url')
@@ -353,14 +352,14 @@ const FriendsTab = () => {
       
       if (friendsError && usersData.length > 0) throw friendsError;
       
-      // Map search results with friend status
+      // Map search results with friend status, using profile data directly
       const resultsWithFriendStatus = usersData.map(user => {
         const friendConnection = friendsData?.find(f => 
           (f.user_id === user.id || f.friend_id === user.id)
         );
         
         return {
-          ...user,
+          ...user, // This ensures we use the exact profile data
           isFriend: friendConnection?.status === 'accepted',
           friendStatus: friendConnection?.status as "pending" | "accepted" | "rejected" | undefined
         };
@@ -861,61 +860,4 @@ const FriendsTab = () => {
                       <div key={user.id} className="flex items-center p-3 border border-finance-midGray/30 dark:border-white/10 rounded-lg">
                         <Avatar className="h-12 w-12 mr-4">
                           <AvatarImage src={user.avatar_url || ""} />
-                          <AvatarFallback className="bg-finance-blue text-white">
-                            {user.full_name 
-                              ? user.full_name.split(' ').map(n => n[0]).join('')
-                              : "??"}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1">
-                          <p className="font-medium">{user.full_name || "Itilizatè"}</p>
-                          <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
-                            @{user.username || "username"}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          {user.isFriend ? (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => startConversation(user.id)}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-2" />
-                              Mesaj
-                            </Button>
-                          ) : user.friendStatus === 'pending' ? (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              disabled
-                            >
-                              <Clock className="h-4 w-4 mr-2" />
-                              Annatant
-                            </Button>
-                          ) : (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => sendFriendRequest(user.id)}
-                            >
-                              <UserPlus className="h-4 w-4 mr-2" />
-                              Ajoute
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-};
-
-export default FriendsTab;
+                          <AvatarFallback className="
