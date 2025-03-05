@@ -57,6 +57,8 @@ export type AuthContextType = {
   signInWithPhoneNumber: (phone: string) => Promise<{ error: any | null }>;
   verifyPhoneOTP: (phone: string, token: string) => Promise<{ error: any | null, user: User | null, session: Session | null }>;
   signInWithGoogleAccount: () => Promise<{ error: any | null }>;
+  signInWithFacebookAccount: () => Promise<{ error: any | null }>;
+  signInWithAppleAccount: () => Promise<{ error: any | null }>;
   refreshProfile: () => Promise<void>;
   // Security and authentication related properties
   setup2FA?: (userId: string) => Promise<{ enabled: boolean, error: any | null }>;

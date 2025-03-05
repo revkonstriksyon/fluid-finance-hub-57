@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth";
@@ -19,6 +20,8 @@ const LoginPage = () => {
     signInWithPhoneNumber, 
     verifyPhoneOTP, 
     signInWithGoogleAccount,
+    signInWithFacebookAccount,
+    signInWithAppleAccount,
     user, 
     loading,
     recordAuthActivity 
@@ -132,7 +135,13 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      await signInWithGoogleAccount();
+      console.log("Starting Google sign in process");
+      const { error } = await signInWithGoogleAccount();
+      if (error) {
+        console.error("Google sign in error:", error);
+        throw error;
+      }
+      console.log("Google auth initiated, redirect should happen automatically");
       // The redirect will be handled by Supabase
     } catch (error: any) {
       console.error("Error during Google sign in:", error);
@@ -145,8 +154,14 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      // Implement Facebook sign in
-      setIsLoading(false);
+      console.log("Starting Facebook sign in process");
+      const { error } = await signInWithFacebookAccount();
+      if (error) {
+        console.error("Facebook sign in error:", error);
+        throw error;
+      }
+      console.log("Facebook auth initiated, redirect should happen automatically");
+      // The redirect will be handled by Supabase
     } catch (error: any) {
       console.error("Error during Facebook sign in:", error);
       setLoginError(error.message || "Erè koneksyon Facebook. Tanpri eseye ankò.");
@@ -158,8 +173,14 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      // Implement Apple sign in
-      setIsLoading(false);
+      console.log("Starting Apple sign in process");
+      const { error } = await signInWithAppleAccount();
+      if (error) {
+        console.error("Apple sign in error:", error);
+        throw error;
+      }
+      console.log("Apple auth initiated, redirect should happen automatically");
+      // The redirect will be handled by Supabase
     } catch (error: any) {
       console.error("Error during Apple sign in:", error);
       setLoginError(error.message || "Erè koneksyon Apple. Tanpri eseye ankò.");

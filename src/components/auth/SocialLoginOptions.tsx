@@ -4,8 +4,8 @@ import { Facebook, Apple } from "lucide-react";
 
 interface SocialLoginOptionsProps {
   onGoogleSignIn: () => Promise<void>;
-  onFacebookSignIn?: () => Promise<void>;
-  onAppleSignIn?: () => Promise<void>;
+  onFacebookSignIn: () => Promise<void>;
+  onAppleSignIn: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -44,29 +44,25 @@ const SocialLoginOptions = ({
         Kontinye ak Google
       </Button>
       
-      {onFacebookSignIn && (
-        <Button
-          variant="outline"
-          className="w-full flex items-center justify-center"
-          onClick={onFacebookSignIn}
-          disabled={isLoading}
-        >
-          <Facebook className="w-5 h-5 mr-2 text-[#1877F2]" />
-          Kontinye ak Facebook
-        </Button>
-      )}
+      <Button
+        variant="outline"
+        className="w-full flex items-center justify-center"
+        onClick={onFacebookSignIn}
+        disabled={isLoading}
+      >
+        <Facebook className="w-5 h-5 mr-2 text-[#1877F2]" />
+        Kontinye ak Facebook
+      </Button>
       
-      {onAppleSignIn && (
-        <Button
-          variant="outline"
-          className="w-full flex items-center justify-center"
-          onClick={onAppleSignIn}
-          disabled={isLoading}
-        >
-          <Apple className="w-5 h-5 mr-2" />
-          Kontinye ak Apple
-        </Button>
-      )}
+      <Button
+        variant="outline"
+        className="w-full flex items-center justify-center"
+        onClick={onAppleSignIn}
+        disabled={isLoading}
+      >
+        <Apple className="w-5 h-5 mr-2" />
+        Kontinye ak Apple
+      </Button>
     </div>
   );
 };

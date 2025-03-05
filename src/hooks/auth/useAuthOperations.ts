@@ -10,7 +10,11 @@ import { useAuthActivity } from './useAuthActivity';
 export const useAuthOperations = () => {
   const emailAuth = useEmailAuth();
   const phoneAuth = usePhoneAuth();
-  const socialAuth = useSocialAuth();
+  const { 
+    signInWithGoogleAccount,
+    signInWithFacebookAccount,
+    signInWithAppleAccount
+  } = useSocialAuth();
   const sessionAuth = useSession();
   const twoFactorAuth = useTwoFactorAuth();
   const sessionManagement = useSessionManagement();
@@ -19,7 +23,9 @@ export const useAuthOperations = () => {
   return {
     ...emailAuth,
     ...phoneAuth,
-    ...socialAuth,
+    signInWithGoogleAccount,
+    signInWithFacebookAccount,
+    signInWithAppleAccount,
     ...sessionAuth,
     ...twoFactorAuth,
     ...sessionManagement,
