@@ -34,11 +34,6 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
-    
-    /* EBOUS Colors */
-    --ebous-gold: 42 80% 56%;
-    --ebous-navy: 210 29% 29%;
-    --ebous-light-blue: 210 40% 75%;
   }
 
   .dark {
@@ -83,15 +78,15 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/80 dark:bg-[#34495e]/80 backdrop-blur-md rounded-xl shadow-md;
+    @apply bg-white/80 dark:bg-finance-navy/80 backdrop-blur-md rounded-xl shadow-md;
   }
   
   .balance-card {
-    @apply bg-gradient-to-br from-[#34495e] to-[#2c3e50] text-white p-6 rounded-xl;
+    @apply bg-gradient-to-br from-finance-blue to-finance-darkBlue text-white p-6 rounded-xl;
   }
   
   .finance-card {
-    @apply bg-white dark:bg-[#34495e]/70 p-6 rounded-xl shadow-sm;
+    @apply bg-white dark:bg-finance-navy/70 p-6 rounded-xl shadow-sm;
   }
   
   .section-title {

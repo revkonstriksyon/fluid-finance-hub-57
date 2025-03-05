@@ -31,13 +31,8 @@ const Navbar = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
           <Menu className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-2">
-          <img 
-            src="/lovable-uploads/673f9295-ff75-48af-b8f9-f19af98b5360.png" 
-            alt="EBOUS Logo" 
-            className="h-8" 
-          />
-          <span className="font-bold text-[#E8AF35]">E</span>
-          <span className="font-bold text-[#34495e]">BOUS</span>
+          <span className="text-finance-blue font-bold">Fluid</span>
+          <span className="text-finance-gold font-bold">Finance</span>
         </div>
       </div>
       
