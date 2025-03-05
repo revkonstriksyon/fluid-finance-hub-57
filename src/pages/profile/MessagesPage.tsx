@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { useMessaging } from "@/hooks/useMessaging";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 
 const MessagesPage = () => {
   const { user } = useAuth();
@@ -25,6 +25,7 @@ const MessagesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(convo => 
@@ -65,6 +66,13 @@ const MessagesPage = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Function to view a user's profile
+  const navigateToUserProfile = (userId: string) => {
+    // For now, we're just navigating to the profile page
+    // In the future, this could be a modal or a separate page with the user's profile
+    window.location.href = `/profile/${userId}`;
+  };
 
   return (
     <Layout>
@@ -176,7 +184,13 @@ const MessagesPage = () => {
                     </div>
                   </div>
                   <div>
-                    <Button variant="outline" size="sm">Wè Pwofil</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigateToUserProfile(activeConversation.otherUser?.id || "")}
+                    >
+                      Wè Pwofil
+                    </Button>
                   </div>
                 </div>
                 

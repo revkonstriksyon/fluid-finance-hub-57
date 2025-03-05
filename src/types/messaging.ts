@@ -29,3 +29,27 @@ export interface Conversation {
     read: boolean;
   };
 }
+
+export interface Friend {
+  id: string;
+  user_id: string;
+  friend_id: string;
+  status: "pending" | "accepted" | "rejected";
+  created_at: string;
+  updated_at: string;
+  friend?: {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  };
+}
+
+export interface UserSearchResult {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  isFriend: boolean;
+  friendStatus?: "pending" | "accepted" | "rejected";
+}
