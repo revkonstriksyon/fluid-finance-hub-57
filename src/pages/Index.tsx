@@ -7,10 +7,12 @@ import GamblingSection from '@/components/dashboard/gambling/GamblingSection';
 import TradingSection from '@/components/dashboard/TradingSection';
 import AccountSection from '@/components/dashboard/AccountSection';
 import { useAuth } from '@/contexts/auth';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('bank');
   const { profile, userLoading, user } = useAuth();
+  const [loadingShown, setLoadingShown] = useState(true);
   
   console.log("Index page rendered - Auth state:", { 
     user: !!user, 
@@ -22,15 +24,24 @@ const Index = () => {
   useEffect(() => {
     if (profile && !userLoading) {
       setActiveSection('bank');
+      setLoadingShown(false);
     }
+    
+    // Auto-hide loading message after 2 seconds even if still loading
+    const timer = setTimeout(() => {
+      setLoadingShown(false);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
   }, [profile, userLoading]);
   
   return (
     <Layout>
       <div className="w-full max-w-6xl mx-auto animate-fade-in">
-        {userLoading ? (
-          <div className="flex justify-center items-center p-8">
-            <div className="animate-pulse">Chajman done kont ou...</div>
+        {userLoading && loadingShown ? (
+          <div className="flex flex-col justify-center items-center p-8 gap-4">
+            <div className="w-20 h-20 rounded-full border-4 border-t-finance-blue border-r-transparent border-b-finance-blue border-l-transparent animate-spin"></div>
+            <p className="text-lg font-medium text-finance-blue">Chajman...</p>
           </div>
         ) : (
           <>
