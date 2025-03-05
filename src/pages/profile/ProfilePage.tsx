@@ -34,8 +34,8 @@ const ProfilePage = () => {
   if (userLoading) {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6">Pwofil Mwen</h1>
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6 text-[#2A4D8F]">Pwofil Mwen</h1>
           <ProfileSkeleton />
         </div>
       </Layout>
@@ -44,8 +44,8 @@ const ProfilePage = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Pwofil Mwen</h1>
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6 text-[#2A4D8F]">Pwofil Mwen</h1>
         
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-1">
