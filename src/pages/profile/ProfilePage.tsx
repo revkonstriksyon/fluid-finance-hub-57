@@ -7,8 +7,9 @@ import ProfileInfo from "@/components/profile/ProfileInfo";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 
 const ProfilePage = () => {
-  const { profile, userLoading, loading, refreshProfile } = useAuth();
+  const { profile, userLoading, loading, refreshProfile, user } = useAuth();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   
   const [formData, setFormData] = useState({
     full_name: "",
@@ -34,18 +35,21 @@ const ProfilePage = () => {
 
   // Try to refresh profile if stuck in loading state for too long
   useEffect(() => {
-    if ((userLoading || loading) && !isInitialized) {
+    if ((userLoading || loading) && !isInitialized && retryCount < 3) {
       const timer = setTimeout(() => {
-        console.log("Profile page still loading, attempting to refresh...");
-        refreshProfile();
-      }, 5000);
+        console.log(`Profile page still loading, attempt ${retryCount + 1}/3 to refresh...`);
+        if (user) {
+          refreshProfile();
+          setRetryCount(prev => prev + 1);
+        }
+      }, 3000); // Shorter timeout and retry up to 3 times
       
       return () => clearTimeout(timer);
     }
-  }, [userLoading, loading, isInitialized, refreshProfile]);
+  }, [userLoading, loading, isInitialized, refreshProfile, retryCount, user]);
 
   // Loading state
-  if (userLoading || loading) {
+  if ((userLoading || loading) && !profile) {
     return (
       <Layout>
         <div className="max-w-4xl mx-auto">

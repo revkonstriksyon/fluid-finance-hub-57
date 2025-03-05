@@ -19,43 +19,43 @@ export const useSessionInitialization = (
       // Fetch profile data first
       await fetchUserProfile(user.id);
       
-      let sessionId = null;
+      // If no session recording function available, return early
+      if (!recordNewSession) return null;
       
       // Record session for the user
-      if (recordNewSession) {
-        const deviceInfo = getDeviceInfo();
-        const location = await estimateLocation();
-        const sessionResult = await recordNewSession(
+      const deviceInfo = getDeviceInfo();
+      const location = await estimateLocation();
+      const sessionResult = await recordNewSession(
+        user.id,
+        deviceInfo,
+        location
+      );
+      
+      if (sessionResult.error) {
+        console.error("Error recording new session:", sessionResult.error);
+        return null;
+      }
+      
+      const sessionId = sessionResult.sessionId;
+      
+      // Record login activity if we have a session ID
+      if (recordAuthActivity && sessionId) {
+        await recordAuthActivity(
           user.id,
-          deviceInfo,
-          location
+          'login',
+          'User logged in',
+          undefined,
+          deviceInfo
         );
-        
-        if (sessionResult.error) {
-          console.error("Error recording new session:", sessionResult.error);
-        } else {
-          sessionId = sessionResult.sessionId;
-          
-          // Record login activity
-          if (recordAuthActivity && sessionId) {
-            await recordAuthActivity(
-              user.id,
-              'login',
-              'User logged in',
-              undefined,
-              deviceInfo
-            );
-          }
-          
-          // Load active sessions and auth activities
-          if (getActiveSessions) {
-            await getActiveSessions();
-          }
-          
-          if (getAuthActivity) {
-            await getAuthActivity(user.id, 10);
-          }
-        }
+      }
+      
+      // Load active sessions and auth activities
+      if (getActiveSessions) {
+        await getActiveSessions();
+      }
+      
+      if (getAuthActivity) {
+        await getAuthActivity(user.id, 10);
       }
       
       return sessionId;

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Profile, BankAccount } from '@/types/auth';
 import { useToast } from './use-toast';
@@ -11,7 +11,12 @@ export const useProfileData = () => {
   const { toast } = useToast();
 
   // Fetch user profile data
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    if (!userId) {
+      console.error("fetchUserProfile called without userId");
+      return;
+    }
+
     try {
       console.log("Fetching profile for user:", userId);
       setUserLoading(true);
@@ -105,17 +110,17 @@ export const useProfileData = () => {
     } finally {
       setUserLoading(false);
     }
-  };
+  }, [toast]);
 
   // Refresh profile data
-  const refreshProfile = async (userId: string | undefined) => {
+  const refreshProfile = useCallback(async (userId: string | undefined) => {
     if (userId) {
       console.log("Refreshing profile for user:", userId);
       await fetchUserProfile(userId);
     } else {
       console.warn("Cannot refresh profile: No user ID provided");
     }
-  };
+  }, [fetchUserProfile]);
 
   return {
     profile,
@@ -127,4 +132,4 @@ export const useProfileData = () => {
     fetchUserProfile,
     refreshProfile
   };
-};
+}, []);
