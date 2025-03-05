@@ -29,6 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 interface AccountCreateProps {
   isOpen: boolean;
@@ -37,17 +39,24 @@ interface AccountCreateProps {
   refreshProfile: () => Promise<void>;
 }
 
-type AccountFormValues = {
-  accountName: string;
-  accountType: string;
-  initialDeposit: number;
-};
+const accountFormSchema = z.object({
+  accountName: z.string().min(3, {
+    message: "Non kont lan dwe gen omwen 3 karaktè.",
+  }),
+  accountType: z.enum(['current', 'savings', 'business', 'credit']),
+  initialDeposit: z.number().min(0, {
+    message: "Depo inisyal la pa kapab negatif.",
+  }),
+});
+
+type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 const AccountCreate = ({ isOpen, onClose, user, refreshProfile }: AccountCreateProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<AccountFormValues>({
+    resolver: zodResolver(accountFormSchema),
     defaultValues: {
       accountName: '',
       accountType: 'current',
@@ -58,9 +67,9 @@ const AccountCreate = ({ isOpen, onClose, user, refreshProfile }: AccountCreateP
   const onSubmit = async (values: AccountFormValues) => {
     if (!user) {
       toast({
-        title: 'Erè',
-        description: 'Ou pa konekte. Tanpri konekte ankò.',
-        variant: 'destructive',
+        title: "Erè",
+        description: "Ou pa konekte. Tanpri konekte ankò.",
+        variant: "destructive",
       });
       return;
     }
@@ -106,8 +115,8 @@ const AccountCreate = ({ isOpen, onClose, user, refreshProfile }: AccountCreateP
       await refreshProfile();
       
       toast({
-        title: 'Kont kreye',
-        description: 'Kont ou an kreye avèk siksè.',
+        title: "Kont kreye",
+        description: "Kont ou an kreye avèk siksè.",
       });
       
       // Close dialog and reset form
@@ -116,9 +125,9 @@ const AccountCreate = ({ isOpen, onClose, user, refreshProfile }: AccountCreateP
     } catch (error: any) {
       console.error('Error creating account:', error);
       toast({
-        title: 'Erè',
+        title: "Erè",
         description: error.message || 'Pa kapab kreye kont lan. Tanpri eseye ankò.',
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
