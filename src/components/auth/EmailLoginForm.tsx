@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LogIn, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
 
 const emailFormSchema = z.object({
   email: z.string().email("Tanpri antre yon adrès imèl valid"),

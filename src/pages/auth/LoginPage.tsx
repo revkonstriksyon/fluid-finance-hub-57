@@ -65,9 +65,6 @@ const LoginPage = () => {
             onAppleSignIn={handleAppleSignIn}
           />
         </CardContent>
-        <CardFooter className="flex justify-center flex-col space-y-4">
-          {/* Footer content is now in LoginForm */}
-        </CardFooter>
       </Card>
       
       <OtpVerificationForm 

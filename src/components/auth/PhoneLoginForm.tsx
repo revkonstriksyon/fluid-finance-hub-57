@@ -1,5 +1,4 @@
 
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -7,12 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Phone } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-
-const phoneFormSchema = z.object({
-  phone: z.string().min(8, "Tanpri antre yon nimewo telefòn valid"),
-});
-
-export type PhoneFormValues = z.infer<typeof phoneFormSchema>;
+import { phoneFormSchema, PhoneFormValues } from "@/components/auth/PhoneFormValues";
 
 interface PhoneLoginFormProps {
   onSubmit: (values: PhoneFormValues) => Promise<void>;

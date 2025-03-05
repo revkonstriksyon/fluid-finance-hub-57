@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Phone, Mail } from "lucide-react";
 
-// Import our components
+// Import our focused components
 import EmailLoginForm from "@/components/auth/EmailLoginForm";
 import PhoneLoginForm from "@/components/auth/PhoneLoginForm";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
