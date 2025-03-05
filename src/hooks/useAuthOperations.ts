@@ -172,14 +172,22 @@ export const useAuthOperations = () => {
         title: "Verifikasyon reyisi",
         description: "Ou konekte ak kont ou.",
       });
-      return { error: null, user: data?.user || null, session: data?.session || null };
+      return { 
+        error: null, 
+        user: data?.user || null, 
+        session: data?.session || null 
+      };
     } catch (error: any) {
       toast({
         title: "Erè verifikasyon",
         description: error.message || "Kòd OTP ou antre a pa valid. Tanpri eseye ankò.",
         variant: "destructive"
       });
-      return { error, user: null };
+      return { 
+        error, 
+        user: null,
+        session: null
+      };
     }
   };
 

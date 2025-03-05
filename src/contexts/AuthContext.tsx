@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
-import { AuthContextType, ActiveSession } from '@/types/auth';
+import { AuthContextType } from '@/types/auth';
 import { useProfileData } from '@/hooks/useProfileData';
 import { useAuthOperations } from '@/hooks/useAuthOperations';
 
@@ -64,10 +64,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     profile,
     bankAccounts,
+    activeSessions: authOperations.activeSessions,
     loading,
     userLoading,
+    signIn: authOperations.signIn,
+    signUp: authOperations.signUp,
+    signOut: authOperations.signOut,
+    resetPassword: authOperations.resetPassword,
+    signInWithPhoneNumber: authOperations.signInWithPhoneNumber,
+    verifyPhoneOTP: authOperations.verifyPhoneOTP,
+    signInWithGoogleAccount: authOperations.signInWithGoogleAccount,
     refreshProfile,
-    ...authOperations
+    updatePassword: authOperations.updatePassword,
+    enable2FA: authOperations.enable2FA,
+    verify2FA: authOperations.verify2FA,
+    terminateSession: authOperations.terminateSession,
+    terminateAllSessions: authOperations.terminateAllSessions
   };
 
   return (
