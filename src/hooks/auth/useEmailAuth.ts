@@ -1,4 +1,3 @@
-
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useAuthBase } from './useAuthBase';
@@ -114,7 +113,7 @@ export const useEmailAuth = () => {
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (email: string): Promise<void> => {
     try {
       if (!email) {
         throw new Error("Imèl obligatwa");
@@ -127,8 +126,6 @@ export const useEmailAuth = () => {
         title: "Imel reyinisyalizasyon modpas voye",
         description: "Tcheke imel ou pou enstriksyon sou reyinisyalizasyon modpas.",
       });
-      
-      return { error: null };
     } catch (error: any) {
       console.error("Password reset error:", error);
       
@@ -138,7 +135,7 @@ export const useEmailAuth = () => {
         variant: "destructive"
       });
       
-      return { error };
+      throw error; // Re-throw the error to be handled by the caller
     }
   };
   

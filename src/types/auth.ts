@@ -1,3 +1,4 @@
+
 import { Session, User } from '@supabase/supabase-js';
 
 // Define types for user profile and bank account
@@ -49,7 +50,7 @@ export type AuthContextType = {
   bankAccounts: BankAccount[];
   loading: boolean;
   userLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ user: User | null; error: any | null }>;
+  signIn: (email: string, password: string) => Promise<{ user: User | null; session: Session | null; error: any | null }>;
   signUp: (email: string, password: string, name: string) => Promise<{ user: User | null; session: Session | null; error: any | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
