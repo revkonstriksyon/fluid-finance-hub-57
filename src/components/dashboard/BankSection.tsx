@@ -5,7 +5,7 @@ import { useTransactions, Transaction } from '@/hooks/useTransactions';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import AccountsOverview from './bank/AccountsOverview';
 import TransactionHistory from './bank/TransactionHistory';
-import TransferPayments from './bank/TransferPayments';
+import TransferPayments from './bank/transfers/TransferPayments';
 import SecuritySettings from './bank/SecuritySettings';
 
 const BankSection = () => {
