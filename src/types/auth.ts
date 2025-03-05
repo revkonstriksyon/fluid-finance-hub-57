@@ -1,7 +1,5 @@
 
 import { Session, User } from '@supabase/supabase-js';
-import { Profile } from '@/types/auth';
-import { BankAccount } from '@/types/auth';
 
 export interface Profile {
   id: string;
