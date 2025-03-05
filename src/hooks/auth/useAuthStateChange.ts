@@ -14,49 +14,86 @@ export const useAuthStateChange = (
   const { getDeviceInfo, estimateLocation } = useDeviceInfo();
 
   const handleAuthChange = useCallback(async (event: string, user: User | null, currentSessionId: string | null) => {
-    console.log("Auth state changed:", event, user?.id);
+    console.log(`Auth state changed: ${event}, user: ${user?.id || 'none'}, currentSessionId: ${currentSessionId || 'none'}`);
     
     if (user) {
-      await fetchUserProfile(user.id);
+      try {
+        await fetchUserProfile(user.id);
+        console.log("User profile fetched successfully");
 
-      // For login events, record a new session
-      if (event === 'SIGNED_IN' && recordNewSession) {
-        console.log("User signed in, recording new session");
-        const deviceInfo = getDeviceInfo();
-        const location = await estimateLocation();
-        const { sessionId } = await recordNewSession(
-          user.id,
-          deviceInfo,
-          location
-        );
-
-        // Record login activity
-        if (recordAuthActivity) {
-          await recordAuthActivity(
+        // For login events, record a new session
+        if (event === 'SIGNED_IN' && recordNewSession) {
+          console.log("User signed in, recording new session");
+          const deviceInfo = getDeviceInfo();
+          const location = await estimateLocation();
+          
+          const sessionResult = await recordNewSession(
             user.id,
-            'login',
-            'User logged in',
-            undefined,
-            deviceInfo
+            deviceInfo,
+            location
           );
+          
+          if (sessionResult.error) {
+            console.error("Error recording new session:", sessionResult.error);
+          } else {
+            console.log("New session recorded successfully, sessionId:", sessionResult.sessionId);
+            
+            // Record login activity
+            if (recordAuthActivity) {
+              const activityResult = await recordAuthActivity(
+                user.id,
+                'login',
+                'User logged in',
+                undefined,
+                deviceInfo
+              );
+              
+              if (activityResult.error) {
+                console.error("Error recording login activity:", activityResult.error);
+              } else {
+                console.log("Login activity recorded successfully");
+              }
+            }
+            
+            // Load active sessions and auth activities
+            if (getActiveSessions) {
+              const sessionsResult = await getActiveSessions();
+              if (sessionsResult.error) {
+                console.error("Error fetching active sessions:", sessionsResult.error);
+              } else {
+                console.log(`Fetched ${sessionsResult.sessions.length} active sessions`);
+              }
+            }
+            
+            if (getAuthActivity) {
+              const activitiesResult = await getAuthActivity(user.id, 10);
+              if (activitiesResult.error) {
+                console.error("Error fetching auth activities:", activitiesResult.error);
+              } else {
+                console.log(`Fetched ${activitiesResult.activities.length} auth activities`);
+              }
+            }
+            
+            return sessionResult.sessionId;
+          }
         }
-
-        // Load active sessions and auth activities
-        if (getActiveSessions) {
-          await getActiveSessions();
-        }
-        
-        if (getAuthActivity) {
-          await getAuthActivity(user.id, 10);
-        }
-        
-        return sessionId;
-      } 
+      } catch (error) {
+        console.error("Error in handleAuthChange:", error);
+      }
     } else if (event === 'SIGNED_OUT') {
       console.log("User signed out");
       // Record logout activity if we still have the user ID
       if (currentSessionId && terminateSession) {
-        await terminateSession(currentSessionId);
+        try {
+          const result = await terminateSession(currentSessionId);
+          if (result.error) {
+            console.error("Error terminating session:", result.error);
+          } else {
+            console.log("Session terminated successfully");
+          }
+        } catch (error) {
+          console.error("Error in terminating session:", error);
+        }
       }
       return null;
     }

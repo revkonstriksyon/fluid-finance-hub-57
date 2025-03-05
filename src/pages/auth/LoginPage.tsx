@@ -44,14 +44,20 @@ const LoginPage = () => {
     setLoginError(null);
     try {
       console.log("Attempting login with email:", values.email);
-      const { user, error } = await signIn(values.email, values.password);
+      const { user, error, session } = await signIn(values.email, values.password);
       
       if (error) {
         console.error("Login error:", error);
         throw error;
       }
       
-      console.log("Login successful, user:", user);
+      if (!user || !session) {
+        console.error("Login successful but no user or session returned");
+        throw new Error("Erè koneksyon. Pa gen itilizatè oswa sesyon retounen");
+      }
+      
+      console.log("Login successful, user:", user.id);
+      console.log("Session is valid:", !!session);
       
       // Record auth activity if the function exists
       if (user && recordAuthActivity) {
@@ -65,6 +71,7 @@ const LoginPage = () => {
       }
       
       // Navigate to home page
+      console.log("Redirecting to home page");
       navigate("/");
     } catch (error: any) {
       console.error("Error during login:", error);
