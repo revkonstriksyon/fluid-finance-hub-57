@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,8 +26,8 @@ const SecuritySettings = () => {
     // Load sessions and activity data when component mounts
     if (user) {
       getActiveSessions?.();
-      // Call getAuthActivity with the user ID as first parameter and limit as second parameter
-      getAuthActivity?.(user.id, 10);
+      // Convert the number 10 to a string for the limit parameter
+      getAuthActivity?.(user.id, "10");
     }
   }, [user, getActiveSessions, getAuthActivity]);
   

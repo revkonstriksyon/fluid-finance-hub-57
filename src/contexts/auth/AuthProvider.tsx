@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -51,12 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Function to fetch auth activities
-  const getAuthActivity = async (userId?: string, limit?: number) => {
+  const getAuthActivity = async (userId?: string, limit?: string | number) => {
     if (user && authOperations.getAuthActivity) {
-      // Convert limit to string only if defined
+      // If limit is a number, convert it to string
+      const limitStr = limit !== undefined ? limit.toString() : undefined;
       const { activities, error } = await authOperations.getAuthActivity(
-        user.id, 
-        limit?.toString()
+        userId || user.id, 
+        limitStr
       );
       if (!error) {
         setAuthActivities(activities);

@@ -22,9 +22,11 @@ export const useAuthActivity = () => {
     }
   };
 
-  const getAuthActivity = async (userId: string, limit?: string) => {
+  const getAuthActivity = async (userId: string, limit?: string | number) => {
     try {
-      const { data, error } = await fetchActivities(userId, limit ? parseInt(limit) : undefined);
+      // Convert limit to number if it's a string
+      const numericLimit = typeof limit === 'string' ? parseInt(limit) : limit;
+      const { data, error } = await fetchActivities(userId, numericLimit);
       if (error) throw error;
       return { activities: data || [], error: null };
     } catch (error: any) {
