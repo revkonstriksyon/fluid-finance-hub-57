@@ -117,14 +117,6 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
             <CardTitle className="text-base font-medium text-[#2A4D8F]">Enfòmasyon Pèsonèl</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Full Name */}
-            <div className="flex justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Non Konplè</p>
-                <p>{profile?.full_name || 'Agaby Panier'}</p>
-              </div>
-            </div>
-
             {/* Email with verification badge */}
             <div className="flex justify-between">
               <div className="space-y-1">
@@ -177,24 +169,10 @@ const ProfileInfo = ({ onEdit }: { onEdit?: () => void }) => {
             <CardTitle className="text-base font-medium text-[#2A4D8F]">Enfòmasyon Pwofil (Piblik)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Username */}
-            <div className="flex justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Non Itilizatè</p>
-                <p>@{profile?.username || 'tioby1'}</p>
-              </div>
-            </div>
-
             {/* Biography */}
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Byografi</p>
-              {profile?.bio ? (
-                <p>{profile.bio}</p>
-              ) : (
-                <p className="text-muted-foreground text-sm italic">
-                  Byografi w ap parèt sou pwofil piblik ou. Ajoute yon kounye a.
-                </p>
-              )}
+              <p>{profile?.bio || ''}</p>
             </div>
 
             {/* Account Activity */}
