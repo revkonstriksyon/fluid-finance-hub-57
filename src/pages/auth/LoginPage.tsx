@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -33,13 +32,20 @@ type PhoneFormValues = z.infer<typeof phoneFormSchema>;
 type OtpFormValues = z.infer<typeof otpFormSchema>;
 
 const LoginPage = () => {
-  const { signIn, signInWithPhoneNumber, verifyPhoneOTP, signInWithGoogleAccount } = useAuth();
+  const { signIn, signInWithPhoneNumber, verifyPhoneOTP, signInWithGoogleAccount, user, loading } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      navigate("/");
+    }
+  }, [user, loading, navigate]);
 
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailFormSchema),

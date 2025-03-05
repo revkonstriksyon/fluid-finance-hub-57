@@ -1,3 +1,4 @@
+
 import { useToast } from '@/components/ui/use-toast';
 import { supabase, signInWithPhone, verifyOTP, signInWithGoogle } from '@/lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
@@ -12,6 +13,37 @@ export const useAuthOperations = () => {
       if (error) {
         console.error("Login error:", error.message);
         throw error;
+      }
+      
+      // Load user profile data immediately after successful login
+      if (data.user) {
+        try {
+          // Check if profile exists
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+            
+          if (profileError && profileError.code === 'PGRST116') {
+            // Profile doesn't exist, create one
+            console.log("Creating new profile for user:", data.user.id);
+            const { error: createError } = await supabase
+              .from('profiles')
+              .insert([{
+                id: data.user.id,
+                full_name: data.user.user_metadata?.full_name || 'New User',
+                username: email.split('@')[0],
+                joined_date: new Date().toISOString()
+              }]);
+              
+            if (createError) {
+              console.error('Error creating profile:', createError);
+            }
+          }
+        } catch (profileError) {
+          console.error('Error checking/creating profile:', profileError);
+        }
       }
       
       toast({

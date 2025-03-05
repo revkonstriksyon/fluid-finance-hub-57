@@ -50,30 +50,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", _event, session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        await fetchUserProfile(session.user.id);
+      } else {
+        // User logged out
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Show toast when user logs in or out
+  // Redirect to profile page after successful login
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !loading && profile && !userLoading) {
+      // Successfully logged in and profile loaded
       toast({
-        title: "Koneksyon reyisi",
+        title: "Byenveni, " + (profile.full_name || ""),
         description: "Ou konekte nan kont ou.",
       });
+      
+      // We can add navigation here if needed in the future
     }
-  }, [user, loading]);
+  }, [user, loading, profile, userLoading]);
 
   return (
     <AuthContext.Provider value={{ 
