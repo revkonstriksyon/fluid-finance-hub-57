@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -62,8 +61,10 @@ const LoginPage = () => {
   const onEmailSubmit = async (values: EmailFormValues) => {
     setIsLoading(true);
     try {
-      await signIn(values.email, values.password);
-      navigate("/");
+      const { error } = await signIn(values.email, values.password);
+      if (!error) {
+        navigate("/");
+      }
     } catch (error) {
       console.error("Error during login:", error);
     } finally {

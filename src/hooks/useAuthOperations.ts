@@ -2,11 +2,11 @@
 import { useToast } from '@/components/ui/use-toast';
 import { supabase, signInWithPhone, verifyOTP, signInWithGoogle, signInWithFacebook } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
 
 export const useAuthOperations = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
+
+  // Remove useNavigate from here as it causes issues when used outside Router
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -18,7 +18,7 @@ export const useAuthOperations = () => {
         description: "Ou konekte nan kont ou.",
       });
       
-      navigate('/');
+      // Let the component handle navigation
       return { error: null };
     } catch (error: any) {
       toast({
@@ -70,7 +70,7 @@ export const useAuthOperations = () => {
         description: "Ou dekonekte soti nan kont ou.",
       });
       
-      navigate('/auth/login');
+      // Let the component handle navigation
       return { error: null };
     } catch (error: any) {
       toast({
@@ -137,7 +137,7 @@ export const useAuthOperations = () => {
         description: "Ou konekte ak kont ou.",
       });
       
-      navigate('/');
+      // Let the component handle navigation
       return { error: null, user: data?.user || null };
     } catch (error: any) {
       toast({
