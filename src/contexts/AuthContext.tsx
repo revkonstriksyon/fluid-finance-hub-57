@@ -5,6 +5,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { AuthContextType } from '@/types/auth';
 import { useProfileData } from '@/hooks/useProfileData';
 import { useAuthOperations } from '@/hooks/useAuthOperations';
+import { useToast } from '@/components/ui/use-toast';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -12,6 +13,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
   const {
     profile,
@@ -25,7 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Wrapper for refresh profile to use with the current user
   const refreshProfile = async () => {
-    await refreshUserProfile(user?.id);
+    if (user) {
+      await refreshUserProfile(user.id);
+      toast({
+        title: "Done yo aktyalize",
+        description: "Done pwofil ou yo te aktyalize avèk siksè.",
+      });
+    }
   };
 
   useEffect(() => {
@@ -43,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", _event, session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -55,6 +64,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Show toast when user logs in or out
+  useEffect(() => {
+    if (user && !loading) {
+      toast({
+        title: "Koneksyon reyisi",
+        description: "Ou konekte nan kont ou.",
+      });
+    }
+  }, [user, loading]);
 
   return (
     <AuthContext.Provider value={{ 
