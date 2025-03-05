@@ -1,3 +1,4 @@
+<lov-code>
 import { useState, useEffect } from 'react';
 import { MessageSquare, Plus, UserPlus, X, Search, Check, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,8 @@ const FriendsTab = () => {
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [userSearchResults, setUserSearchResults] = useState<UserSearchResult[]>([]);
   const [loadingUserSearch, setLoadingUserSearch] = useState(false);
+  const [allUsers, setAllUsers] = useState<UserSearchResult[]>([]);
+  const [loadingAllUsers, setLoadingAllUsers] = useState(false);
 
   // Helper function to get friend profile data safely
   const getFriendProfile = (friend: Friend): FriendProfile => {
@@ -49,6 +52,7 @@ const FriendsTab = () => {
   useEffect(() => {
     if (user) {
       fetchFriends();
+      fetchAllUsers(); // Load all users when component mounts
       
       // Set up real-time subscription for friend updates
       const friendsChannel = supabase
@@ -80,6 +84,59 @@ const FriendsTab = () => {
       };
     }
   }, [user]);
+
+  // Fetch all users in the database
+  const fetchAllUsers = async () => {
+    if (!user) return;
+    
+    try {
+      setLoadingAllUsers(true);
+      
+      // Fetch all users except the current user
+      const { data: usersData, error: usersError } = await supabase
+        .from('profiles')
+        .select('id, full_name, username, avatar_url')
+        .neq('id', user.id)
+        .order('full_name', { ascending: true });
+      
+      if (usersError) throw usersError;
+      
+      // Get existing friend connections for these users
+      const { data: friendsData, error: friendsError } = await supabase
+        .from('friends')
+        .select('id, user_id, friend_id, status')
+        .or(
+          `user_id.eq.${user.id},friend_id.eq.${user.id}`
+        );
+      
+      if (friendsError) throw friendsError;
+      
+      // Map all users with friend status
+      const usersWithFriendStatus = usersData.map(userData => {
+        const friendConnection = friendsData?.find(f => 
+          (f.user_id === userData.id && f.friend_id === user.id) || 
+          (f.friend_id === userData.id && f.user_id === user.id)
+        );
+        
+        return {
+          ...userData,
+          isFriend: friendConnection?.status === 'accepted',
+          friendStatus: friendConnection?.status as "pending" | "accepted" | "rejected" | undefined
+        };
+      });
+      
+      setAllUsers(usersWithFriendStatus);
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      toast({
+        title: "Erè",
+        description: "Nou pa kapab chaje tout itilizatè yo",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingAllUsers(false);
+    }
+  };
 
   // Fetch friends and friend requests
   const fetchFriends = async () => {
@@ -185,6 +242,18 @@ const FriendsTab = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Filter all users based on search term
+  const filterUsers = () => {
+    if (!userSearchTerm.trim()) {
+      return allUsers;
+    }
+    
+    return allUsers.filter(user => 
+      user.full_name?.toLowerCase().includes(userSearchTerm.toLowerCase()) || 
+      user.username?.toLowerCase().includes(userSearchTerm.toLowerCase())
+    );
   };
 
   // Search users by name or username
@@ -330,7 +399,9 @@ const FriendsTab = () => {
         description: "Demann zanmi a voye",
       });
       
-      // Refresh search results
+      // Refresh search results, friends list, and all users
+      fetchAllUsers();
+      
       if (userSearchTerm) {
         searchAllUsers();
       } else {
@@ -362,6 +433,7 @@ const FriendsTab = () => {
       });
       
       fetchFriends();
+      fetchAllUsers(); // Refresh all users list
     } catch (error) {
       console.error('Error accepting friend request:', error);
       toast({
@@ -388,6 +460,7 @@ const FriendsTab = () => {
       });
       
       fetchFriends();
+      fetchAllUsers(); // Refresh all users list
     } catch (error) {
       console.error('Error rejecting friend request:', error);
       toast({
@@ -460,6 +533,7 @@ const FriendsTab = () => {
             </TabsTrigger>
             <TabsTrigger value="add" className="flex-1">Ajoute Zanmi</TabsTrigger>
             <TabsTrigger value="search" className="flex-1">Chèche Itilizatè</TabsTrigger>
+            <TabsTrigger value="all" className="flex-1">Tout Itilizatè</TabsTrigger>
           </TabsList>
           
           {/* Friends List */}
@@ -756,10 +830,40 @@ const FriendsTab = () => {
               )}
             </div>
           </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-};
-
-export default FriendsTab;
+          
+          {/* All Users Tab */}
+          <TabsContent value="all">
+            <h3 className="text-lg font-medium mb-4">Tout Itilizatè</h3>
+            
+            {loadingAllUsers ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-6 w-6 animate-spin text-finance-blue" />
+              </div>
+            ) : (
+              <div>
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-finance-charcoal/50 dark:text-white/50 h-4 w-4" />
+                  <Input 
+                    placeholder="Filtè itilizatè yo..." 
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="space-y-3 mt-4 max-h-[400px] overflow-y-auto pr-2">
+                  {filterUsers().length === 0 ? (
+                    <p className="text-center py-4 text-finance-charcoal/70 dark:text-white/70">
+                      {allUsers.length === 0 ? "Pa gen okenn itilizatè nan sistèm nan." : "Pa gen okenn itilizatè ki koresponn ak rechèch la."}
+                    </p>
+                  ) : (
+                    filterUsers().map((user) => (
+                      <div key={user.id} className="flex items-center p-3 border border-finance-midGray/30 dark:border-white/10 rounded-lg">
+                        <Avatar className="h-12 w-12 mr-4">
+                          <AvatarImage src={user.avatar_url || ""} />
+                          <AvatarFallback className="bg-finance-blue text-white">
+                            {user.full_name 
+                              ? user.full_name.split(' ').map(n => n[0]).join('')
+                              : "??"}
+                          </AvatarFallback>
+                        </Avatar>
