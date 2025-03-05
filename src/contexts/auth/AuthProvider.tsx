@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to fetch auth activities
   const getAuthActivity = async (userId?: string, limit?: number) => {
     if (user && authOperations.getAuthActivity) {
-      const { activities, error } = await authOperations.getAuthActivity(user.id, limit);
+      const { activities, error } = await authOperations.getAuthActivity(user.id, limit ? limit.toString() : undefined);
       if (!error) {
         setAuthActivities(activities);
       }
