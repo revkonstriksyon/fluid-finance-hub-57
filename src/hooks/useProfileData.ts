@@ -19,11 +19,39 @@ export const useProfileData = () => {
         .single();
 
       if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        return;
+        // If profile doesn't exist, create a new one
+        if (profileError.code === 'PGRST116') {
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData && userData.user) {
+            const newProfile = {
+              id: userId,
+              full_name: userData.user.user_metadata?.full_name || '',
+              username: userData.user.email ? userData.user.email.split('@')[0] : '',
+              avatar_url: null,
+              phone: userData.user.phone || null,
+              location: null,
+              bio: null,
+              joined_date: new Date().toISOString()
+            };
+            
+            const { data: newProfileData, error: createError } = await supabase
+              .from('profiles')
+              .insert([newProfile])
+              .select()
+              .single();
+              
+            if (createError) {
+              console.error('Error creating profile:', createError);
+            } else {
+              setProfile(newProfileData as Profile);
+            }
+          }
+        } else {
+          console.error('Error fetching profile:', profileError);
+        }
+      } else {
+        setProfile(profileData as Profile);
       }
-
-      setProfile(profileData as Profile);
 
       // Fetch bank accounts
       const { data: accountsData, error: accountsError } = await supabase
@@ -33,10 +61,9 @@ export const useProfileData = () => {
 
       if (accountsError) {
         console.error('Error fetching bank accounts:', accountsError);
-        return;
+      } else {
+        setBankAccounts(accountsData as BankAccount[]);
       }
-
-      setBankAccounts(accountsData as BankAccount[]);
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
     } finally {
