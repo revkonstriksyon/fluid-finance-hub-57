@@ -7,8 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { Pencil, Save, X } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Pencil } from "lucide-react";
 
 interface ProfileFormProps {
   initialData: {
@@ -27,15 +26,15 @@ const ProfileForm = ({ initialData, onSaveSuccess }: ProfileFormProps) => {
   
   const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState(initialData);
-  const [isEditing, setIsEditing] = useState(false);
+  const [editField, setEditField] = useState<string | null>(null);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const toggleEdit = () => {
-    setIsEditing(!isEditing);
+  const toggleEdit = (fieldName: string) => {
+    setEditField(editField === fieldName ? null : fieldName);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,164 +88,136 @@ const ProfileForm = ({ initialData, onSaveSuccess }: ProfileFormProps) => {
       });
     } finally {
       setIsUpdating(false);
-      setIsEditing(false); // Exit edit mode
+      setEditField(null); // Reset edit mode
     }
   };
 
-  const handleCancel = () => {
-    setFormData(initialData);
-    setIsEditing(false);
-    if (onSaveSuccess) {
-      onSaveSuccess();
-    }
+  const renderEditableField = (
+    label: string, 
+    name: string, 
+    value: string, 
+    type: string = "text",
+    disabled: boolean = false,
+    description?: string
+  ) => {
+    const isEditing = editField === name;
+    const canEdit = !disabled;
+    
+    return (
+      <div className="space-y-2 mb-4">
+        <div className="flex justify-between items-center">
+          <Label htmlFor={name}>{label}</Label>
+          {canEdit && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => toggleEdit(name)} 
+              className="h-8 px-2"
+              type="button" // Add this to prevent form submission when clicking edit
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        
+        {isEditing ? (
+          <Input 
+            id={name} 
+            name={name} 
+            value={value} 
+            onChange={handleChange} 
+            type={type}
+            disabled={disabled}
+          />
+        ) : (
+          <div className="p-2 border rounded-md bg-muted/30">
+            {value || <span className="text-muted-foreground italic">Pa ranpli</span>}
+          </div>
+        )}
+        
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
+      </div>
+    );
   };
 
   return (
-    <Card className="finance-card">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Enfòmasyon Pwofil</CardTitle>
-        {!isEditing ? (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={toggleEdit} 
-            className="h-8 px-3"
-            type="button"
-          >
-            <Pencil className="h-4 w-4 mr-2" />
-            Modifye
-          </Button>
-        ) : null}
-      </CardHeader>
-      
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Name Field */}
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Non Konplè</Label>
-              {isEditing ? (
-                <Input 
-                  id="full_name" 
-                  name="full_name" 
-                  value={formData.full_name} 
-                  onChange={handleChange} 
-                />
-              ) : (
-                <div className="p-2 border rounded-md bg-muted/30 h-10 flex items-center">
-                  {formData.full_name || <span className="text-muted-foreground italic">Pa ranpli</span>}
-                </div>
-              )}
-            </div>
-            
-            {/* Username Field */}
-            <div className="space-y-2">
-              <Label htmlFor="username">Non Itilizatè</Label>
-              {isEditing ? (
-                <Input 
-                  id="username" 
-                  name="username" 
-                  value={formData.username} 
-                  onChange={handleChange} 
-                />
-              ) : (
-                <div className="p-2 border rounded-md bg-muted/30 h-10 flex items-center">
-                  {formData.username || <span className="text-muted-foreground italic">Pa ranpli</span>}
-                </div>
-              )}
-            </div>
-            
-            {/* Email Field - Always Read Only */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Imèl</Label>
-              <div className="p-2 border rounded-md bg-muted/30 h-10 flex items-center">
-                {user?.email || <span className="text-muted-foreground italic">Pa ranpli</span>}
-              </div>
-              <p className="text-xs text-muted-foreground">Imèl pa ka chanje</p>
-            </div>
-            
-            {/* Phone Field */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefòn</Label>
-              {isEditing ? (
-                <Input 
-                  id="phone" 
-                  name="phone" 
-                  value={formData.phone || ''} 
-                  onChange={handleChange} 
-                />
-              ) : (
-                <div className="p-2 border rounded-md bg-muted/30 h-10 flex items-center">
-                  {formData.phone || <span className="text-muted-foreground italic">Pa ranpli</span>}
-                </div>
-              )}
-            </div>
-            
-            {/* Location Field */}
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="location">Lokasyon</Label>
-              {isEditing ? (
-                <Input 
-                  id="location" 
-                  name="location" 
-                  value={formData.location || ''} 
-                  onChange={handleChange} 
-                />
-              ) : (
-                <div className="p-2 border rounded-md bg-muted/30 h-10 flex items-center">
-                  {formData.location || <span className="text-muted-foreground italic">Pa ranpli</span>}
-                </div>
-              )}
-            </div>
+    <form onSubmit={handleSubmit} className="finance-card p-6">
+      <div className="space-y-2">
+        {renderEditableField("Non Konplè", "full_name", formData.full_name)}
+        
+        {renderEditableField("Non Itilizatè", "username", formData.username)}
+        
+        {renderEditableField(
+          "Imèl", 
+          "email", 
+          user?.email || "", 
+          "email", 
+          true, 
+          "Imèl pa ka chanje"
+        )}
+        
+        {renderEditableField("Telefòn", "phone", formData.phone)}
+        
+        {renderEditableField("Lokasyon", "location", formData.location)}
+        
+        <div className="space-y-2 mb-4">
+          <div className="flex justify-between items-center">
+            <Label htmlFor="bio">Byografi</Label>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => toggleEdit("bio")} 
+              className="h-8 px-2"
+              type="button" // Add this to prevent form submission
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
           </div>
           
-          {/* Bio Field */}
-          <div className="space-y-2">
-            <Label htmlFor="bio">Byografi</Label>
-            {isEditing ? (
-              <Textarea 
-                id="bio" 
-                name="bio" 
-                rows={4} 
-                value={formData.bio || ''} 
-                onChange={handleChange} 
-              />
-            ) : (
-              <div className="p-2 border rounded-md bg-muted/30 min-h-[100px]">
-                {formData.bio || <span className="text-muted-foreground italic">Pa gen byografi</span>}
-              </div>
-            )}
-            {!isEditing && (
-              <p className="text-xs text-muted-foreground">
-                Byografi w ap parèt sou pwofil piblik ou.
-              </p>
-            )}
-          </div>
-
-          {isEditing && (
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button 
-                variant="outline" 
-                type="button" 
-                onClick={handleCancel}
-                className="gap-2"
-              >
-                <X className="h-4 w-4" />
-                Anile
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isUpdating}
-                className="gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {isUpdating ? 'Chajman...' : 'Sovegade'}
-              </Button>
+          {editField === "bio" ? (
+            <Textarea 
+              id="bio" 
+              name="bio" 
+              rows={4} 
+              value={formData.bio || ''} 
+              onChange={handleChange} 
+            />
+          ) : (
+            <div className="p-2 border rounded-md bg-muted/30 min-h-[100px]">
+              {formData.bio || <span className="text-muted-foreground italic">Pa gen byografi</span>}
             </div>
           )}
-        </form>
-      </CardContent>
-    </Card>
+          
+          <p className="text-xs text-muted-foreground">
+            Byografi w ap parèt sou pwofil piblik ou.
+          </p>
+        </div>
+
+        <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
+          <Button 
+            variant="outline" 
+            type="button" 
+            onClick={() => {
+              setFormData(initialData);
+              setEditField(null);
+              if (onSaveSuccess) {
+                onSaveSuccess();
+              }
+            }}
+          >
+            Anile
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isUpdating || !editField}
+          >
+            {isUpdating ? 'Chajman...' : 'Sovegade'}
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 };
 
