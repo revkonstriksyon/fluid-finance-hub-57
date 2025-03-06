@@ -100,6 +100,13 @@ const PostsTab = () => {
             userLiked = !!likeData;
           }
 
+          // Extract profile data correctly, handling both object and array cases
+          let profileData = post.profiles;
+          // If profiles is an array, take the first item
+          if (Array.isArray(profileData)) {
+            profileData = profileData[0] || {};
+          }
+
           // Create a properly formatted post object that matches our Post interface
           const formattedPost: Post = {
             id: post.id,
@@ -109,9 +116,9 @@ const PostsTab = () => {
             comments: commentsCount || 0,
             user_liked: userLiked,
             user: {
-              full_name: post.profiles?.full_name || 'Unknown User',
-              username: post.profiles?.username || 'unknown',
-              avatar_url: post.profiles?.avatar_url || null,
+              full_name: profileData?.full_name || 'Unknown User',
+              username: profileData?.username || 'unknown',
+              avatar_url: profileData?.avatar_url || null,
             }
           };
             
