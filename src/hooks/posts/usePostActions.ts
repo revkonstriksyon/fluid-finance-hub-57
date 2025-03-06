@@ -1,10 +1,14 @@
 
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { User } from '@/contexts/AuthContext';
 import { PostData } from '@/types/posts';
+import { User } from '@supabase/supabase-js';
 
-export const usePostActions = (user: User | null, posts: PostData[], setPosts: (posts: PostData[]) => void) => {
+export const usePostActions = (
+  user: User | null, 
+  posts: PostData[], 
+  setPosts: React.Dispatch<React.SetStateAction<PostData[]>>
+) => {
   const { toast } = useToast();
 
   const handleLike = async (postId: string, currentlyLiked: boolean) => {

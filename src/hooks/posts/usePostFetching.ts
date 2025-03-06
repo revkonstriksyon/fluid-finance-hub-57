@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { PostData, PostWithProfile } from '@/types/posts';
-import { User } from '@/contexts/AuthContext';
+import { User } from '@supabase/supabase-js';
 
 export const usePostFetching = (user: User | null) => {
   const [posts, setPosts] = useState<PostData[]>([]);

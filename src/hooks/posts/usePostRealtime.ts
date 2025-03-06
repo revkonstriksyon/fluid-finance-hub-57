@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User } from '@/contexts/AuthContext';
+import { User } from '@supabase/supabase-js';
 
 export const usePostRealtime = (
   user: User | null, 

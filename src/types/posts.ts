@@ -1,5 +1,5 @@
 
-import { User } from "@/contexts/AuthContext";
+import { User } from '@supabase/supabase-js';
 
 // Define user profile information
 export interface PostUserProfile {
