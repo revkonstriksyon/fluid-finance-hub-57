@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, AlertCircle, CheckCircle2, Loader2, DatabaseIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 
@@ -20,10 +20,12 @@ interface Game {
 
 interface SuspiciousActivity {
   id: string;
+  user_id: string;
   user_name: string;
   pattern: string;
   games_count: number;
   total_amount: number;
+  status: string;
 }
 
 interface SystemStats {
@@ -37,6 +39,8 @@ export const AdminGamingMonitoring = () => {
   const [suspiciousUsers, setSuspiciousUsers] = useState<SuspiciousActivity[]>([]);
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [activeTabsLoading, setActiveTabsLoading] = useState<boolean>(false);
+  const [suspiciousTabsLoading, setSuspiciousTabsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -46,7 +50,9 @@ export const AdminGamingMonitoring = () => {
         const { data: statsData, error: statsError } = await supabase
           .from('system_statistics')
           .select('active_games_count, active_users_count, fraud_alerts_24h_count')
-          .single();
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
         
         if (statsError) {
           console.error('Error fetching system stats:', statsError);
@@ -56,7 +62,11 @@ export const AdminGamingMonitoring = () => {
             variant: "destructive"
           });
         } else {
-          setSystemStats(statsData);
+          setSystemStats(statsData || {
+            active_games_count: 0,
+            active_users_count: 0,
+            fraud_alerts_24h_count: 0
+          });
         }
         
         // Fetch active games
@@ -78,7 +88,7 @@ export const AdminGamingMonitoring = () => {
         // Fetch suspicious activities
         const { data: suspiciousData, error: suspiciousError } = await supabase
           .from('suspicious_activities')
-          .select('id, user_name, pattern, games_count, total_amount');
+          .select('id, user_id, user_name, pattern, games_count, total_amount, status');
         
         if (suspiciousError) {
           console.error('Error fetching suspicious activities:', suspiciousError);
@@ -107,6 +117,7 @@ export const AdminGamingMonitoring = () => {
 
   // Function to handle game suspension
   const handleSuspendGame = async (gameId: string) => {
+    setActiveTabsLoading(true);
     try {
       const { error } = await supabase
         .from('games')
@@ -141,11 +152,14 @@ export const AdminGamingMonitoring = () => {
         description: "Gen yon erè ki fèt pandan n ap kanpe jeu a.",
         variant: "destructive"
       });
+    } finally {
+      setActiveTabsLoading(false);
     }
   };
 
   // Function to handle suspicious user investigation
   const handleInvestigateUser = async (userId: string) => {
+    setSuspiciousTabsLoading(true);
     try {
       const { error } = await supabase
         .from('suspicious_activities')
@@ -160,6 +174,13 @@ export const AdminGamingMonitoring = () => {
           variant: "destructive"
         });
       } else {
+        // Update local state
+        setSuspiciousUsers(prevUsers =>
+          prevUsers.map(user =>
+            user.id === userId ? { ...user, status: 'investigating' } : user
+          )
+        );
+        
         toast({
           title: "Siksè",
           description: "Envestigasyon kòmanse sou itilizatè sa a.",
@@ -173,6 +194,8 @@ export const AdminGamingMonitoring = () => {
         description: "Gen yon erè ki fèt pandan n ap kòmanse envestigasyon an.",
         variant: "destructive"
       });
+    } finally {
+      setSuspiciousTabsLoading(false);
     }
   };
 
@@ -236,9 +259,15 @@ export const AdminGamingMonitoring = () => {
               <CardDescription>Tout jeu k ap jwe oswa pral kòmanse byento</CardDescription>
             </CardHeader>
             <CardContent>
-              {activeGames.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Pa gen okenn jeu aktif pou kounye a.
+              {activeTabsLoading ? (
+                <div className="flex items-center justify-center h-40">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Chajman done yo...</span>
+                </div>
+              ) : activeGames.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground flex flex-col items-center">
+                  <DatabaseIcon className="h-12 w-12 mb-2 text-muted-foreground/50" />
+                  <p>Pa gen okenn jeu aktif nan baz done a pou kounye a.</p>
                 </div>
               ) : (
                 <Table>
@@ -308,9 +337,15 @@ export const AdminGamingMonitoring = () => {
               <CardDescription>Aktivite ki ka endike fwod oswa manipilasyon</CardDescription>
             </CardHeader>
             <CardContent>
-              {suspiciousUsers.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Pa gen okenn aktivite sispèk ki detekte dènyèman.
+              {suspiciousTabsLoading ? (
+                <div className="flex items-center justify-center h-40">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Chajman done yo...</span>
+                </div>
+              ) : suspiciousUsers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground flex flex-col items-center">
+                  <CheckCircle2 className="h-12 w-12 mb-2 text-green-500/50" />
+                  <p>Pa gen okenn aktivite sispèk nan baz done a pou kounye a.</p>
                 </div>
               ) : (
                 <Table>
@@ -321,27 +356,48 @@ export const AdminGamingMonitoring = () => {
                       <TableHead>Modèl Sispèk</TableHead>
                       <TableHead>Kantite Jeu</TableHead>
                       <TableHead>Total Lajan</TableHead>
+                      <TableHead>Statu</TableHead>
                       <TableHead>Aksyon</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {suspiciousUsers.map(user => (
                       <TableRow key={user.id}>
-                        <TableCell>{user.id.substring(0, 8)}</TableCell>
+                        <TableCell>{user.user_id.substring(0, 8)}</TableCell>
                         <TableCell>{user.user_name}</TableCell>
                         <TableCell>{user.pattern}</TableCell>
                         <TableCell>{user.games_count}</TableCell>
                         <TableCell>${user.total_amount.toFixed(2)}</TableCell>
                         <TableCell>
+                          <Badge 
+                            variant={
+                              user.status === 'investigating' ? "secondary" : 
+                              user.status === 'blocked' ? "destructive" : 
+                              "outline"
+                            }
+                          >
+                            {user.status === 'investigating' ? "Anba Envestigasyon" : 
+                             user.status === 'blocked' ? "Bloke" : 
+                             "Annatant"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex gap-2">
                             <Button 
                               variant="outline" 
                               size="sm"
+                              disabled={user.status === 'investigating'}
                               onClick={() => handleInvestigateUser(user.id)}
                             >
                               Envestige
                             </Button>
-                            <Button variant="destructive" size="sm">Bloke</Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              disabled={user.status === 'blocked'}
+                            >
+                              Bloke
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -367,7 +423,7 @@ export const AdminGamingMonitoring = () => {
                     <h3 className="font-semibold">Pèfòmans Sistèm nan - Nòmal</h3>
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Tout sistèm jeu yo ap fonksyone nòmalman. Pa gen okenn ensidan ki rapòte nan dènye 24 èdtan.
+                    Tout sistèm jeu yo ap fonksyone nòmalman. {suspiciousUsers.length > 0 ? `Gen ${suspiciousUsers.length} ensidan ki rapòte nan dènye 24 èdtan.` : 'Pa gen okenn ensidan ki rapòte nan dènye 24 èdtan.'}
                   </p>
                 </div>
                 
