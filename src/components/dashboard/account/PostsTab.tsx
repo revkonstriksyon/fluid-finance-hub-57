@@ -47,10 +47,20 @@ const PostsTab = () => {
     try {
       setIsLoading(true);
       
-      // First, get all posts
+      // Get posts with user profiles in a more efficient way
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
-        .select('*')
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          profiles!posts_user_id_fkey (
+            full_name,
+            username,
+            avatar_url
+          )
+        `)
         .order('created_at', { ascending: false });
         
       if (postsError) {
@@ -63,16 +73,9 @@ const PostsTab = () => {
         return;
       }
 
-      // Get user data for each post
-      const postsWithUserData = await Promise.all(
+      // Process posts and get additional data
+      const processedPosts = await Promise.all(
         postsData.map(async (post) => {
-          // Get user profile data
-          const { data: userData } = await supabase
-            .from('profiles')
-            .select('full_name, username, avatar_url')
-            .eq('id', post.user_id)
-            .single();
-            
           // Get likes count
           const { count: likesCount } = await supabase
             .from('post_likes')
@@ -98,7 +101,10 @@ const PostsTab = () => {
             userLiked = !!likeData;
           }
 
-          // Create a properly formatted post object that matches our Post interface
+          // Extract the profile data from the joined query
+          const profileData = post.profiles || {};
+          
+          // Create formatted post with proper user information
           const formattedPost: Post = {
             id: post.id,
             content: post.content,
@@ -107,9 +113,9 @@ const PostsTab = () => {
             comments: commentsCount || 0,
             user_liked: userLiked,
             user: {
-              full_name: userData?.full_name || 'Unknown User',
-              username: userData?.username || 'unknown',
-              avatar_url: userData?.avatar_url || null,
+              full_name: profileData?.full_name || 'User',
+              username: profileData?.username || '',
+              avatar_url: profileData?.avatar_url || null,
             }
           };
             
@@ -117,7 +123,7 @@ const PostsTab = () => {
         })
       );
       
-      setPosts(postsWithUserData);
+      setPosts(processedPosts);
     } catch (error) {
       console.error('Error in fetchPosts:', error);
       toast({
