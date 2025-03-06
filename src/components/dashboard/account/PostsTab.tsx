@@ -47,19 +47,10 @@ const PostsTab = () => {
     try {
       setIsLoading(true);
       
+      // First, get all posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          profiles(
-            full_name,
-            username,
-            avatar_url
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
         
       if (postsError) {
@@ -72,9 +63,16 @@ const PostsTab = () => {
         return;
       }
 
-      // Get likes count for each post
-      const postsWithCounts = await Promise.all(
+      // Get user data for each post
+      const postsWithUserData = await Promise.all(
         postsData.map(async (post) => {
+          // Get user profile data
+          const { data: userData } = await supabase
+            .from('profiles')
+            .select('full_name, username, avatar_url')
+            .eq('id', post.user_id)
+            .single();
+            
           // Get likes count
           const { count: likesCount } = await supabase
             .from('post_likes')
@@ -100,20 +98,6 @@ const PostsTab = () => {
             userLiked = !!likeData;
           }
 
-          // Extract profile data correctly
-          let profileData: any = null;
-          
-          // Check if profiles exists and handle both object and array cases
-          if (post.profiles) {
-            if (Array.isArray(post.profiles)) {
-              // If it's an array, take the first item
-              profileData = post.profiles.length > 0 ? post.profiles[0] : null;
-            } else {
-              // If it's an object, use it directly
-              profileData = post.profiles;
-            }
-          }
-
           // Create a properly formatted post object that matches our Post interface
           const formattedPost: Post = {
             id: post.id,
@@ -123,9 +107,9 @@ const PostsTab = () => {
             comments: commentsCount || 0,
             user_liked: userLiked,
             user: {
-              full_name: profileData?.full_name || 'Unknown User',
-              username: profileData?.username || 'unknown',
-              avatar_url: profileData?.avatar_url || null,
+              full_name: userData?.full_name || 'Unknown User',
+              username: userData?.username || 'unknown',
+              avatar_url: userData?.avatar_url || null,
             }
           };
             
@@ -133,7 +117,7 @@ const PostsTab = () => {
         })
       );
       
-      setPosts(postsWithCounts);
+      setPosts(postsWithUserData);
     } catch (error) {
       console.error('Error in fetchPosts:', error);
       toast({
