@@ -48,14 +48,12 @@ export const fetchUserProfileApi = async (userId: string) => {
  */
 export const fetchLastMessageApi = async (conversation: { user1_id: string, user2_id: string }) => {
   try {
-    // Fix: Use proper OR query with parentheses for complex conditions
+    // Fix: Use separate queries for each condition and combine them with OR
     const { data: lastMessageData, error: lastMessageError } = await supabase
       .from("messages")
       .select("content, created_at, read")
-      .or(
-        `and(sender_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}),` +
-        `and(sender_id.eq.${conversation.user2_id},receiver_id.eq.${conversation.user1_id})`
-      )
+      .or(`sender_id.eq.${conversation.user1_id},sender_id.eq.${conversation.user2_id}`)
+      .or(`receiver_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}`)
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
@@ -74,14 +72,12 @@ export const fetchLastMessageApi = async (conversation: { user1_id: string, user
  */
 export const fetchMessagesApi = async (conversation: { user1_id: string, user2_id: string }) => {
   try {
-    // Fix: Use proper OR query with parentheses for complex conditions
+    // Fix: Use separate queries for each condition and combine them with OR
     const { data: messagesData, error: messagesError } = await supabase
       .from("messages")
       .select("*")
-      .or(
-        `and(sender_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}),` +
-        `and(sender_id.eq.${conversation.user2_id},receiver_id.eq.${conversation.user1_id})`
-      )
+      .or(`sender_id.eq.${conversation.user1_id},sender_id.eq.${conversation.user2_id}`)
+      .or(`receiver_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}`)
       .order("created_at", { ascending: true });
     
     if (messagesError) throw messagesError;
@@ -157,7 +153,7 @@ export const createConversationApi = async (userId: string, otherUserId: string)
     const { data: existingConversation, error: existingError } = await supabase
       .from("conversations")
       .select("*")
-      .or(`user1_id.eq.${userId}.and.user2_id.eq.${otherUserId},user1_id.eq.${otherUserId}.and.user2_id.eq.${userId}`)
+      .or(`and(user1_id.eq.${userId},user2_id.eq.${otherUserId}),and(user1_id.eq.${otherUserId},user2_id.eq.${userId})`)
       .maybeSingle();
     
     if (existingError) throw existingError;
