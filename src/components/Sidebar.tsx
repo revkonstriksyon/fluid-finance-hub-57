@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   MessageSquare,
@@ -12,7 +13,7 @@ import {
   Bell,
   Mail,
   File,
-  Logout,
+  LogOut,
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -99,7 +100,7 @@ export default function Sidebar() {
             <DropdownMenuItem onClick={() => navigate('/settings')}>Reglaj</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut}>
-              <Logout className="mr-2 h-4 w-4" />
+              <LogOut className="mr-2 h-4 w-4" />
               <span>Dekonekte</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
