@@ -1,7 +1,7 @@
+
 import { useState, useCallback } from "react";
 import { useMessaging } from "./useMessaging";
 import { useToast } from "./use-toast";
-import { Conversation, Message } from "@/types/messaging";
 import { supabase } from "@/lib/supabase";
 
 export const useMessageActions = () => {
