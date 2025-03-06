@@ -100,11 +100,18 @@ const PostsTab = () => {
             userLiked = !!likeData;
           }
 
-          // Extract profile data correctly, handling both object and array cases
-          let profileData = post.profiles;
-          // If profiles is an array, take the first item
-          if (Array.isArray(profileData)) {
-            profileData = profileData[0] || {};
+          // Extract profile data correctly
+          let profileData: any = null;
+          
+          // Check if profiles exists and handle both object and array cases
+          if (post.profiles) {
+            if (Array.isArray(post.profiles)) {
+              // If it's an array, take the first item
+              profileData = post.profiles.length > 0 ? post.profiles[0] : null;
+            } else {
+              // If it's an object, use it directly
+              profileData = post.profiles;
+            }
           }
 
           // Create a properly formatted post object that matches our Post interface
