@@ -228,6 +228,7 @@ export const useMessaging = () => {
     setActiveConversation,
     fetchMessages,
     sendMessage,
-    createConversation
+    createConversation,
+    fetchConversations  // Add fetchConversations to the return object
   };
 };

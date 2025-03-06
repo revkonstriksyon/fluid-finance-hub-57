@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useMessaging } from "./useMessaging";
 import { useToast } from "./use-toast";
@@ -72,7 +71,7 @@ export const useMessageActions = () => {
     window.location.href = `/profile/${userId}`;
   }, []);
 
-  // NEW: Function to delete a message
+  // Function to delete a message
   const deleteMessage = useCallback(async (messageId: string) => {
     try {
       const { error } = await supabase
@@ -98,7 +97,7 @@ export const useMessageActions = () => {
     }
   }, [toast]);
 
-  // NEW: Function to delete a conversation
+  // Function to delete a conversation
   const deleteConversation = useCallback(async (conversationId: string) => {
     try {
       // Delete all messages in the conversation first
