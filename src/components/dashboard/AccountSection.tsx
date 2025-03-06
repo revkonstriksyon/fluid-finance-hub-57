@@ -4,7 +4,7 @@ import ProfileSidebar from './account/ProfileSidebar';
 import PostsTab from './account/PostsTab';
 import PortfolioTab from './account/PortfolioTab';
 import FriendsTab from './account/FriendsTab';
-import { userData, sampleTweets } from './account/accountData';
+import { userData } from './account/accountData';
 
 const AccountSection = () => {
   return (
@@ -23,7 +23,7 @@ const AccountSection = () => {
             </TabsList>
             
             <TabsContent value="posts">
-              <PostsTab tweets={sampleTweets} />
+              <PostsTab />
             </TabsContent>
             
             <TabsContent value="portfolio">

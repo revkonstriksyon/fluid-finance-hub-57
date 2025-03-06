@@ -99,14 +99,23 @@ const PostsTab = () => {
               
             userLiked = !!likeData;
           }
-            
-          return {
-            ...post,
-            user: post.profiles,
+
+          // Create a properly formatted post object that matches our Post interface
+          const formattedPost: Post = {
+            id: post.id,
+            content: post.content,
+            created_at: post.created_at,
             likes: likesCount || 0,
             comments: commentsCount || 0,
             user_liked: userLiked,
+            user: {
+              full_name: post.profiles?.full_name || 'Unknown User',
+              username: post.profiles?.username || 'unknown',
+              avatar_url: post.profiles?.avatar_url || null,
+            }
           };
+            
+          return formattedPost;
         })
       );
       
