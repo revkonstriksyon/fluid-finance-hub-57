@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -104,6 +103,7 @@ export const usePostOperations = () => {
             likes: likesCount || 0,
             comments: commentsCount || 0,
             user_liked: userLiked,
+            user_id: post.user_id, // Include user_id to identify post ownership
             user: {
               full_name: profileData?.full_name || 'User',
               username: profileData?.username || '',
@@ -178,6 +178,55 @@ export const usePostOperations = () => {
     }
   };
 
+  const deletePost = async (postId: string) => {
+    if (!user) {
+      toast({
+        title: 'Ou pa konekte',
+        description: 'Ou dwe konekte pou w ka efase yon pòs',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      // Delete all likes for this post first (to avoid foreign key constraints)
+      await supabase
+        .from('post_likes')
+        .delete()
+        .eq('post_id', postId);
+        
+      // Delete all comments for this post (to avoid foreign key constraints)
+      await supabase
+        .from('post_comments')
+        .delete()
+        .eq('post_id', postId);
+        
+      // Now delete the post itself
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user.id); // Ensure the user can only delete their own posts
+        
+      if (error) {
+        console.error('Error deleting post:', error);
+        throw error;
+      }
+      
+      // Update local state to remove the deleted post
+      setPosts(posts.filter(post => post.id !== postId));
+      
+    } catch (error) {
+      console.error('Error in deletePost:', error);
+      toast({
+        title: 'Erè nan efase pòs la',
+        description: 'Yon erè te fèt pandan efase pòs la.',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   const addNewPost = (newPost: PostData) => {
     setPosts(prevPosts => [newPost, ...prevPosts]);
   };
@@ -187,6 +236,7 @@ export const usePostOperations = () => {
     isLoading,
     fetchPosts,
     handleLike,
-    addNewPost
+    addNewPost,
+    deletePost
   };
 };

@@ -6,9 +6,10 @@ interface PostListProps {
   posts: PostData[];
   isLoading: boolean;
   onLikeToggle: (postId: string, currentlyLiked: boolean) => Promise<void>;
+  onDeletePost?: (postId: string) => Promise<void>;
 }
 
-export const PostList = ({ posts, isLoading, onLikeToggle }: PostListProps) => {
+export const PostList = ({ posts, isLoading, onLikeToggle, onDeletePost }: PostListProps) => {
   if (isLoading) {
     return (
       <>
@@ -51,6 +52,7 @@ export const PostList = ({ posts, isLoading, onLikeToggle }: PostListProps) => {
           key={post.id} 
           post={post} 
           onLikeToggle={onLikeToggle}
+          onDeletePost={onDeletePost}
         />
       ))}
     </>
