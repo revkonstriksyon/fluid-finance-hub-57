@@ -20,15 +20,22 @@ export const useMessageOperations = (
     if (!user || !conversationId) return;
     
     try {
+      console.log("Fetching messages for conversation:", conversationId);
+      
       const { data: conversation } = await supabase
         .from("conversations")
         .select("*")
         .eq("id", conversationId)
         .single();
       
-      if (!conversation) return;
+      if (!conversation) {
+        console.log("Conversation not found:", conversationId);
+        return;
+      }
       
       const messagesData = await fetchMessagesApi(conversation);
+      console.log("Messages data:", messagesData);
+      
       setMessages(messagesData || []);
       
       // Mark messages as read
@@ -38,6 +45,7 @@ export const useMessageOperations = (
         );
         
         if (unreadMessages.length > 0) {
+          console.log("Marking messages as read:", unreadMessages.length);
           await markMessagesAsReadApi(unreadMessages.map(msg => msg.id));
           
           // Refresh conversations to update unread counts without changing UI state

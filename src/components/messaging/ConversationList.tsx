@@ -29,6 +29,8 @@ export const ConversationList = ({
   onNewConversation 
 }: ConversationListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
+  
+  console.log("ConversationList rendered with", conversations.length, "conversations");
 
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(convo => 
@@ -55,6 +57,23 @@ export const ConversationList = ({
     } catch (e) {
       return "jodi a";
     }
+  };
+
+  // Calculate unread counts for each conversation
+  const getUnreadCount = (conversationId: string) => {
+    if (!user) return 0;
+    
+    // Only count unread messages for the current conversation
+    const conversationMessages = messages.filter(msg => 
+      (msg.sender_id === activeConversation?.otherUser?.id && 
+       msg.receiver_id === user.id) ||
+      (msg.receiver_id === activeConversation?.otherUser?.id && 
+       msg.sender_id === user.id)
+    );
+    
+    return conversationMessages.filter(
+      msg => msg.receiver_id === user.id && !msg.read
+    ).length;
   };
 
   return (
@@ -102,9 +121,7 @@ export const ConversationList = ({
           </div>
         ) : (
           filteredConversations.map(conversation => {
-            const unreadCount = messages.filter(
-              msg => msg.receiver_id === user?.id && !msg.read
-            ).length;
+            const unreadCount = getUnreadCount(conversation.id);
             
             return (
               <div 

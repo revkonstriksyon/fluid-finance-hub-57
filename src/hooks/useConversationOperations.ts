@@ -25,13 +25,23 @@ export const useConversationOperations = (
       if (!skipLoading) setLoading(true);
       fetchingRef.current = true;
       
+      console.log("Fetching conversations for user:", user.id);
       const conversationsData = await fetchConversationsApi(user.id);
+      
+      if (!conversationsData || conversationsData.length === 0) {
+        console.log("No conversations found for user");
+        setConversations([]);
+        return;
+      }
+      
       const enrichedConversations = await enrichConversationData(conversationsData, user.id);
+      console.log("Setting conversations:", enrichedConversations);
       
       setConversations(enrichedConversations);
       
       // Set the first conversation as active if none is selected
       if (enrichedConversations.length > 0 && !activeConversation) {
+        console.log("Setting first conversation as active:", enrichedConversations[0].id);
         setActiveConversation(enrichedConversations[0]);
         await fetchMessages(enrichedConversations[0].id);
       } else if (activeConversation) {
@@ -41,6 +51,7 @@ export const useConversationOperations = (
         );
         
         if (updatedActiveConversation) {
+          console.log("Updating active conversation:", updatedActiveConversation.id);
           setActiveConversation(updatedActiveConversation);
         }
       }

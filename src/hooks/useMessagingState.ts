@@ -13,6 +13,15 @@ export const useMessagingState = () => {
   const fetchingRef = useRef(false);
   const activateConversationRef = useRef<string | null>(null);
 
+  // Debug log current state
+  console.log("Current messaging state:", {
+    conversationsCount: conversations.length,
+    activeConversation: activeConversation?.id,
+    messagesCount: messages.length,
+    loading,
+    sendingMessage
+  });
+
   return {
     // State
     conversations,

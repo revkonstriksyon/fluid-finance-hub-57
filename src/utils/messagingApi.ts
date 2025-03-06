@@ -8,6 +8,7 @@ import { Conversation, Message } from "@/types/messaging";
  */
 export const fetchConversationsApi = async (userId: string) => {
   try {
+    console.log("Fetching conversations for user:", userId);
     const { data: conversationsData, error: conversationsError } = await supabase
       .from("conversations")
       .select("*")
@@ -16,6 +17,7 @@ export const fetchConversationsApi = async (userId: string) => {
     
     if (conversationsError) throw conversationsError;
     
+    console.log("Conversations data:", conversationsData);
     return conversationsData;
   } catch (error) {
     console.error("Error fetching conversations:", error);
@@ -28,6 +30,7 @@ export const fetchConversationsApi = async (userId: string) => {
  */
 export const fetchUserProfileApi = async (userId: string) => {
   try {
+    console.log("Fetching profile for user:", userId);
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("id, full_name, username, avatar_url")
@@ -36,6 +39,7 @@ export const fetchUserProfileApi = async (userId: string) => {
     
     if (profileError) throw profileError;
     
+    console.log("Profile data:", profileData);
     return profileData;
   } catch (error) {
     console.error("Error fetching user profile:", error);
@@ -48,18 +52,26 @@ export const fetchUserProfileApi = async (userId: string) => {
  */
 export const fetchLastMessageApi = async (conversation: { user1_id: string, user2_id: string }) => {
   try {
-    // Fix: Use separate queries for each condition and combine them with OR
+    console.log("Fetching last message for conversation between users:", conversation.user1_id, conversation.user2_id);
+    
+    // We need to get messages where either user is the sender and the other is the receiver
     const { data: lastMessageData, error: lastMessageError } = await supabase
       .from("messages")
       .select("content, created_at, read")
-      .or(`sender_id.eq.${conversation.user1_id},sender_id.eq.${conversation.user2_id}`)
-      .or(`receiver_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}`)
+      .or(
+        `and(sender_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}),` +
+        `and(sender_id.eq.${conversation.user2_id},receiver_id.eq.${conversation.user1_id})`
+      )
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
     
-    if (lastMessageError && lastMessageError.code !== 'PGRST116') throw lastMessageError;
+    if (lastMessageError && lastMessageError.code !== 'PGRST116') {
+      console.error("Error fetching last message:", lastMessageError);
+      throw lastMessageError;
+    }
     
+    console.log("Last message data:", lastMessageData);
     return lastMessageData;
   } catch (error) {
     console.error("Error fetching last message:", error);
@@ -72,16 +84,21 @@ export const fetchLastMessageApi = async (conversation: { user1_id: string, user
  */
 export const fetchMessagesApi = async (conversation: { user1_id: string, user2_id: string }) => {
   try {
-    // Fix: Use separate queries for each condition and combine them with OR
+    console.log("Fetching messages for conversation between users:", conversation.user1_id, conversation.user2_id);
+    
+    // We need to get messages where either user is the sender and the other is the receiver
     const { data: messagesData, error: messagesError } = await supabase
       .from("messages")
       .select("*")
-      .or(`sender_id.eq.${conversation.user1_id},sender_id.eq.${conversation.user2_id}`)
-      .or(`receiver_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}`)
+      .or(
+        `and(sender_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}),` +
+        `and(sender_id.eq.${conversation.user2_id},receiver_id.eq.${conversation.user1_id})`
+      )
       .order("created_at", { ascending: true });
     
     if (messagesError) throw messagesError;
     
+    console.log("Messages data:", messagesData);
     return messagesData || [];
   } catch (error) {
     console.error("Error fetching messages:", error);

@@ -9,12 +9,22 @@ export const enrichConversationData = async (
   conversationsData: any[], 
   userId: string
 ): Promise<Conversation[]> => {
+  console.log("Enriching conversation data for user:", userId);
+  console.log("Raw conversation data:", conversationsData);
+
+  if (!conversationsData || conversationsData.length === 0) {
+    console.log("No conversations to enrich");
+    return [];
+  }
+
   // Fetch the other user's profile for each conversation
   const conversationsWithProfiles = await Promise.all(
     conversationsData.map(async (conversation) => {
       const otherUserId = conversation.user1_id === userId 
         ? conversation.user2_id 
         : conversation.user1_id;
+      
+      console.log("Getting profile for conversation with other user:", otherUserId);
       
       // Get the other user's profile
       const profileData = await fetchUserProfileApi(otherUserId);
@@ -34,5 +44,6 @@ export const enrichConversationData = async (
     })
   );
   
+  console.log("Enriched conversations:", conversationsWithProfiles);
   return conversationsWithProfiles;
 };
