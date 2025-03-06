@@ -41,13 +41,21 @@ const PostsTab = () => {
     <div className="space-y-6">
       <CreatePostForm onPostCreated={addNewPost} />
       
-      <PostList 
-        posts={posts}
-        isLoading={isLoading}
-        onLikeToggle={handleLike}
-        onDeletePost={deletePost}
-        onCommentAdded={handleCommentAdded}
-      />
+      {isLoading && !dataLoaded ? (
+        <div className="finance-card p-8 text-center">
+          <p className="text-finance-charcoal/70 dark:text-white/70">
+            Ap chaje pòs yo...
+          </p>
+        </div>
+      ) : (
+        <PostList 
+          posts={posts}
+          isLoading={isLoading}
+          onLikeToggle={handleLike}
+          onDeletePost={deletePost}
+          onCommentAdded={handleCommentAdded}
+        />
+      )}
 
       {dataLoaded && posts.length === 0 && !isLoading && (
         <div className="finance-card p-8 text-center">

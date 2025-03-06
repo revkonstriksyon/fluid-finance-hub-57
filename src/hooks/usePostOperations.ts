@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { PostData } from '@/components/dashboard/account/posts/Post';
@@ -24,6 +24,41 @@ export const usePostOperations = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Subscribe to realtime changes for posts
+  useEffect(() => {
+    if (!user) return;
+    
+    const channel = supabase
+      .channel('posts-channel')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'posts' }, 
+        (payload) => {
+          console.log('Post change detected:', payload);
+          fetchPosts();
+        }
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'post_likes' }, 
+        (payload) => {
+          console.log('Like change detected:', payload);
+          fetchPosts();
+        }
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'post_comments' }, 
+        (payload) => {
+          console.log('Comment change detected:', payload);
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
+    // Clean up on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
@@ -36,7 +71,7 @@ export const usePostOperations = () => {
           content,
           created_at,
           user_id,
-          profiles(
+          profiles (
             full_name,
             username,
             avatar_url
@@ -54,47 +89,51 @@ export const usePostOperations = () => {
         return;
       }
 
-      console.log('Posts data:', postsData);
+      console.log('Raw posts data from database:', postsData);
 
       // Process posts and get additional data
       const processedPosts = await Promise.all(
-        (postsData as unknown as PostWithProfile[]).map(async (post) => {
+        (postsData || []).map(async (post: any) => {
           // Get likes count
-          const { count: likesCount } = await supabase
+          const { count: likesCount, error: likesError } = await supabase
             .from('post_likes')
             .select('id', { count: 'exact', head: true })
             .eq('post_id', post.id);
             
+          if (likesError) {
+            console.error('Error fetching likes count:', likesError);
+          }
+            
           // Get comments count
-          const { count: commentsCount } = await supabase
+          const { count: commentsCount, error: commentsError } = await supabase
             .from('post_comments')
             .select('id', { count: 'exact', head: true })
             .eq('post_id', post.id);
             
+          if (commentsError) {
+            console.error('Error fetching comments count:', commentsError);
+          }
+            
           // Check if current user liked this post
           let userLiked = false;
           if (user) {
-            const { data: likeData } = await supabase
+            const { data: likeData, error: likeError } = await supabase
               .from('post_likes')
               .select('id')
               .eq('post_id', post.id)
               .eq('user_id', user.id)
               .maybeSingle();
               
-            userLiked = !!likeData;
-          }
-
-          // First get the profile entry, which may be an array with one item or null
-          let profileData = null;
-          if (post.profiles) {
-            // If it's an array, take the first item
-            if (Array.isArray(post.profiles) && post.profiles.length > 0) {
-              profileData = post.profiles[0];
+            if (likeError) {
+              console.error('Error checking if user liked post:', likeError);
             } else {
-              // If it's already an object, use it directly
-              profileData = post.profiles;
+              userLiked = !!likeData;
             }
           }
+
+          // Handle profile data, which could be null or an object
+          const profileData = post.profiles;
+          console.log('Profile data for post:', post.id, profileData);
           
           // Create formatted post with proper user information
           const formattedPost: PostData = {
@@ -106,8 +145,8 @@ export const usePostOperations = () => {
             user_liked: userLiked,
             user_id: post.user_id, // Include user_id to identify post ownership
             user: {
-              full_name: profileData?.full_name || 'User',
-              username: profileData?.username || '',
+              full_name: profileData?.full_name || 'Unknown User',
+              username: profileData?.username || 'unknown',
               avatar_url: profileData?.avatar_url || null,
             }
           };
@@ -116,6 +155,7 @@ export const usePostOperations = () => {
         })
       );
       
+      console.log('Processed posts:', processedPosts);
       setPosts(processedPosts);
     } catch (error) {
       console.error('Error in fetchPosts:', error);
