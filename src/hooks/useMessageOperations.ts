@@ -7,7 +7,7 @@ import { Conversation, Message } from "@/types/messaging";
 import { fetchMessagesApi, markMessagesAsReadApi, sendMessageApi } from "@/utils/messagingApi";
 
 export const useMessageOperations = (
-  setMessages: (messages: Message[]) => void,
+  setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void,
   setSendingMessage: (sending: boolean) => void,
   activeConversation: Conversation | null,
   fetchConversations: (skipLoading?: boolean) => Promise<void>
@@ -74,7 +74,7 @@ export const useMessageOperations = (
       
       // Add the new message to the state immediately
       if (messageData) {
-        setMessages(prev => [...prev, messageData]);
+        setMessages((prev: Message[]) => [...prev, messageData]);
       }
       
       return messageData;
