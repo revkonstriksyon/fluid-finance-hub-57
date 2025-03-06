@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Friend, FriendProfile } from "@/types/messaging";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FriendRequestsProps {
   friendRequests: Friend[];
@@ -18,10 +19,41 @@ interface FriendRequestsProps {
 
 const FriendRequests = ({ friendRequests, isLoading, getFriendProfile, fetchFriends, fetchAllUsers }: FriendRequestsProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [processingIds, setProcessingIds] = useState<Record<string, boolean>>({});
+
+  // Set up real-time subscription for friend request updates
+  useEffect(() => {
+    if (!user) return;
+    
+    // Set up real-time subscription for friend updates
+    const friendsChannel = supabase
+      .channel('friend-requests')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friends',
+          filter: `friend_id=eq.${user.id}`
+        },
+        () => {
+          console.log("Friend request update detected");
+          fetchFriends();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(friendsChannel);
+    };
+  }, [user, fetchFriends]);
 
   // Accept a friend request
   const acceptFriendRequest = async (requestId: string) => {
     try {
+      setProcessingIds(prev => ({ ...prev, [requestId]: true }));
+      
       const { error } = await supabase
         .from('friends')
         .update({ status: 'accepted' })
@@ -43,12 +75,16 @@ const FriendRequests = ({ friendRequests, isLoading, getFriendProfile, fetchFrie
         description: "Nou pa kapab aksepte demann zanmi",
         variant: "destructive"
       });
+    } finally {
+      setProcessingIds(prev => ({ ...prev, [requestId]: false }));
     }
   };
 
   // Reject a friend request
   const rejectFriendRequest = async (requestId: string) => {
     try {
+      setProcessingIds(prev => ({ ...prev, [requestId]: true }));
+      
       const { error } = await supabase
         .from('friends')
         .update({ status: 'rejected' })
@@ -70,6 +106,8 @@ const FriendRequests = ({ friendRequests, isLoading, getFriendProfile, fetchFrie
         description: "Nou pa kapab rejte demann zanmi",
         variant: "destructive"
       });
+    } finally {
+      setProcessingIds(prev => ({ ...prev, [requestId]: false }));
     }
   };
 
@@ -91,6 +129,8 @@ const FriendRequests = ({ friendRequests, isLoading, getFriendProfile, fetchFrie
         <div className="space-y-3">
           {friendRequests.map((request) => {
             const friendProfile = getFriendProfile(request);
+            const isProcessing = processingIds[request.id] || false;
+            
             return (
               <div key={request.id} className="flex items-center p-3 border border-finance-midGray/30 dark:border-white/10 rounded-lg">
                 <Avatar className="h-12 w-12 mr-4">
@@ -114,18 +154,28 @@ const FriendRequests = ({ friendRequests, isLoading, getFriendProfile, fetchFrie
                     variant="outline" 
                     size="sm"
                     onClick={() => acceptFriendRequest(request.id)}
+                    disabled={isProcessing}
                     className="border-green-500 text-green-500 hover:bg-green-500/10"
                   >
-                    <Check className="h-4 w-4 mr-2" />
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4 mr-2" />
+                    )}
                     Aksepte
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => rejectFriendRequest(request.id)}
+                    disabled={isProcessing}
                     className="border-red-500 text-red-500 hover:bg-red-500/10"
                   >
-                    <X className="h-4 w-4 mr-2" />
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4 mr-2" />
+                    )}
                     Rejte
                   </Button>
                 </div>
