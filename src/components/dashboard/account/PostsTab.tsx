@@ -25,6 +25,19 @@ interface Post {
   };
 }
 
+// Define an interface for the profile data returned from the join query
+interface PostWithProfile {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  profiles?: {
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  };
+}
+
 const PostsTab = () => {
   const { user, profile } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -75,7 +88,7 @@ const PostsTab = () => {
 
       // Process posts and get additional data
       const processedPosts = await Promise.all(
-        postsData.map(async (post) => {
+        (postsData as PostWithProfile[]).map(async (post) => {
           // Get likes count
           const { count: likesCount } = await supabase
             .from('post_likes')
@@ -101,8 +114,12 @@ const PostsTab = () => {
             userLiked = !!likeData;
           }
 
-          // Extract the profile data from the joined query
-          const profileData = post.profiles || {};
+          // Extract the profile data from the joined query safely
+          const profileData = post.profiles || {
+            full_name: null,
+            username: null,
+            avatar_url: null
+          };
           
           // Create formatted post with proper user information
           const formattedPost: Post = {
@@ -113,9 +130,9 @@ const PostsTab = () => {
             comments: commentsCount || 0,
             user_liked: userLiked,
             user: {
-              full_name: profileData?.full_name || 'User',
-              username: profileData?.username || '',
-              avatar_url: profileData?.avatar_url || null,
+              full_name: profileData.full_name || 'User',
+              username: profileData.username || '',
+              avatar_url: profileData.avatar_url || null,
             }
           };
             
