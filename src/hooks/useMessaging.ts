@@ -1,9 +1,17 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Message, Conversation } from "@/types/messaging";
 import { useToast } from "@/hooks/use-toast";
+import { Message, Conversation } from "@/types/messaging";
+import { useMessagingRealtime } from "./useMessagingRealtime";
+import {
+  fetchConversationsApi,
+  fetchMessagesApi,
+  markMessagesAsReadApi,
+  sendMessageApi,
+  createConversationApi
+} from "@/utils/messagingApi";
+import { enrichConversationData } from "@/utils/conversationHelpers";
 
 export const useMessaging = () => {
   const { user } = useAuth();
@@ -21,57 +29,18 @@ export const useMessaging = () => {
     try {
       setLoading(true);
       
-      const { data: conversationsData, error: conversationsError } = await supabase
-        .from("conversations")
-        .select("*")
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .order("last_message_at", { ascending: false });
+      const conversationsData = await fetchConversationsApi(user.id);
+      const enrichedConversations = await enrichConversationData(conversationsData, user.id);
       
-      if (conversationsError) throw conversationsError;
-      
-      // Fetch the other user's profile for each conversation
-      const conversationsWithProfiles = await Promise.all(
-        conversationsData.map(async (conversation) => {
-          const otherUserId = conversation.user1_id === user.id 
-            ? conversation.user2_id 
-            : conversation.user1_id;
-          
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("id, full_name, username, avatar_url")
-            .eq("id", otherUserId)
-            .single();
-          
-          // Get the last message for this conversation
-          const { data: lastMessageData } = await supabase
-            .from("messages")
-            .select("content, created_at, read")
-            .or(`sender_id.eq.${conversation.user1_id}.and.receiver_id.eq.${conversation.user2_id},sender_id.eq.${conversation.user2_id}.and.receiver_id.eq.${conversation.user1_id}`)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
-          
-          return {
-            ...conversation,
-            otherUser: profileData ? { 
-              ...profileData,
-              // Simulate online status - in a real app, this would come from a presence system
-              status: Math.random() > 0.5 ? "online" : (Math.random() > 0.5 ? "away" : "offline")
-            } : undefined,
-            lastMessage: lastMessageData || undefined
-          };
-        })
-      );
-      
-      setConversations(conversationsWithProfiles);
+      setConversations(enrichedConversations);
       
       // Set the first conversation as active if none is selected
-      if (conversationsWithProfiles.length > 0 && !activeConversation) {
-        setActiveConversation(conversationsWithProfiles[0]);
-        await fetchMessages(conversationsWithProfiles[0].id);
+      if (enrichedConversations.length > 0 && !activeConversation) {
+        setActiveConversation(enrichedConversations[0]);
+        await fetchMessages(enrichedConversations[0].id);
       } else if (activeConversation) {
         // Update the active conversation with new data
-        const updatedActiveConversation = conversationsWithProfiles.find(
+        const updatedActiveConversation = enrichedConversations.find(
           conv => conv.id === activeConversation.id
         );
         if (updatedActiveConversation) {
@@ -103,14 +72,7 @@ export const useMessaging = () => {
       
       if (!conversation) return;
       
-      const { data: messagesData, error: messagesError } = await supabase
-        .from("messages")
-        .select("*")
-        .or(`sender_id.eq.${conversation.user1_id}.and.receiver_id.eq.${conversation.user2_id},sender_id.eq.${conversation.user2_id}.and.receiver_id.eq.${conversation.user1_id}`)
-        .order("created_at", { ascending: true });
-      
-      if (messagesError) throw messagesError;
-      
+      const messagesData = await fetchMessagesApi(conversation);
       setMessages(messagesData || []);
       
       // Mark messages as read
@@ -120,10 +82,7 @@ export const useMessaging = () => {
         );
         
         if (unreadMessages.length > 0) {
-          await supabase
-            .from("messages")
-            .update({ read: true })
-            .in("id", unreadMessages.map(msg => msg.id));
+          await markMessagesAsReadApi(unreadMessages.map(msg => msg.id));
           
           // Refresh conversations to update unread counts
           fetchConversations();
@@ -150,24 +109,12 @@ export const useMessaging = () => {
         ? activeConversation.user2_id 
         : activeConversation.user1_id;
       
-      // Add message to database
-      const { data: messageData, error: messageError } = await supabase
-        .from("messages")
-        .insert({
-          sender_id: user.id,
-          receiver_id: receiverId,
-          content: content.trim()
-        })
-        .select()
-        .single();
-      
-      if (messageError) throw messageError;
-      
-      // Update conversation last_message_at
-      await supabase
-        .from("conversations")
-        .update({ last_message_at: new Date().toISOString() })
-        .eq("id", activeConversation.id);
+      const messageData = await sendMessageApi(
+        user.id,
+        receiverId,
+        content,
+        activeConversation.id
+      );
       
       // Refresh messages and conversations
       await fetchMessages(activeConversation.id);
@@ -192,30 +139,7 @@ export const useMessaging = () => {
     if (!user || user.id === otherUserId) return null;
     
     try {
-      // Check if conversation already exists
-      const { data: existingConversation } = await supabase
-        .from("conversations")
-        .select("*")
-        .or(`user1_id.eq.${user.id}.and.user2_id.eq.${otherUserId},user1_id.eq.${otherUserId}.and.user2_id.eq.${user.id}`)
-        .maybeSingle();
-      
-      if (existingConversation) {
-        setActiveConversation(existingConversation);
-        await fetchMessages(existingConversation.id);
-        return existingConversation;
-      }
-      
-      // Create new conversation
-      const { data: newConversation, error: conversationError } = await supabase
-        .from("conversations")
-        .insert({
-          user1_id: user.id,
-          user2_id: otherUserId
-        })
-        .select()
-        .single();
-      
-      if (conversationError) throw conversationError;
+      const newConversation = await createConversationApi(user.id, otherUserId);
       
       // Fetch the complete conversation with user profile
       await fetchConversations();
@@ -238,69 +162,23 @@ export const useMessaging = () => {
     }
   }, [user, fetchConversations, fetchMessages, conversations, toast]);
 
-  // Set up real-time subscriptions
+  // Set up realtime subscriptions through the custom hook
+  useMessagingRealtime(user?.id, {
+    onNewMessage: useCallback(() => {
+      fetchConversations();
+      if (activeConversation) {
+        fetchMessages(activeConversation.id);
+      }
+    }, [fetchConversations, fetchMessages, activeConversation]),
+    onConversationUpdate: fetchConversations
+  });
+
+  // Initial data fetch
   useEffect(() => {
-    if (!user) return;
-    
-    // Subscribe to new messages
-    const messagesChannel = supabase
-      .channel('public:messages')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}`
-        },
-        () => {
-          // Refresh data when a new message is received
-          fetchConversations();
-          if (activeConversation) {
-            fetchMessages(activeConversation.id);
-          }
-        }
-      )
-      .subscribe();
-    
-    // Subscribe to conversation updates
-    const conversationsChannel = supabase
-      .channel('public:conversations')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'conversations',
-          filter: `user1_id=eq.${user.id}`
-        },
-        () => {
-          fetchConversations();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'conversations',
-          filter: `user2_id=eq.${user.id}`
-        },
-        () => {
-          fetchConversations();
-        }
-      )
-      .subscribe();
-    
-    // Initial data fetch
-    fetchConversations();
-    
-    // Cleanup subscriptions
-    return () => {
-      supabase.removeChannel(messagesChannel);
-      supabase.removeChannel(conversationsChannel);
-    };
-  }, [user, fetchConversations, fetchMessages, activeConversation]);
+    if (user) {
+      fetchConversations();
+    }
+  }, [user, fetchConversations]);
 
   return {
     conversations,
