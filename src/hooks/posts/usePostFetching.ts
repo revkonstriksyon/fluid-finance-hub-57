@@ -13,21 +13,12 @@ export const usePostFetching = (user: User | null) => {
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
+      console.log("Starting to fetch posts...");
       
-      // Get all posts with user profiles, not just the current user's posts
+      // Get all posts first, without trying to join with profiles
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          profiles (
-            full_name,
-            username,
-            avatar_url
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
         
       if (postsError) {
@@ -42,9 +33,27 @@ export const usePostFetching = (user: User | null) => {
 
       console.log('Raw posts data from database:', postsData);
 
+      // If no posts found, return early
+      if (!postsData || postsData.length === 0) {
+        console.log('No posts found in database');
+        setPosts([]);
+        return;
+      }
+
       // Process posts and get additional data
       const processedPosts = await Promise.all(
         (postsData || []).map(async (post: any) => {
+          // Fetch profile data separately
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name, username, avatar_url')
+            .eq('id', post.user_id)
+            .single();
+            
+          if (profileError) {
+            console.error(`Error fetching profile for post ${post.id}:`, profileError);
+          }
+          
           // Get likes count
           const { count: likesCount, error: likesError } = await supabase
             .from('post_likes')
@@ -82,8 +91,6 @@ export const usePostFetching = (user: User | null) => {
             }
           }
 
-          // Handle profile data, which could be null or an object
-          const profileData = post.profiles;
           console.log('Profile data for post:', post.id, profileData);
           
           // Create formatted post with proper user information
