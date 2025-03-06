@@ -1,26 +1,189 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/components/ui/use-toast";
+
+interface Game {
+  id: string;
+  type: string;
+  players: number;
+  start_time: string;
+  status: string;
+  suspicious_activity: boolean;
+}
+
+interface SuspiciousActivity {
+  id: string;
+  user_name: string;
+  pattern: string;
+  games_count: number;
+  total_amount: number;
+}
+
+interface SystemStats {
+  active_games_count: number;
+  active_users_count: number;
+  fraud_alerts_24h_count: number;
+}
 
 export const AdminGamingMonitoring = () => {
-  // Mock data for demonstration
-  const activeGames = [
-    { id: 'G1234', type: 'Lotri', players: 145, startTime: '14:30', status: 'active', suspiciousActivity: false },
-    { id: 'G2345', type: 'Pòkè', players: 32, startTime: '13:15', status: 'active', suspiciousActivity: true },
-    { id: 'G3456', type: 'Kazino', players: 78, startTime: '12:00', status: 'ending', suspiciousActivity: false },
-    { id: 'G4567', type: 'Kous Cheval', players: 203, startTime: '15:45', status: 'upcoming', suspiciousActivity: false },
-  ];
+  const [activeGames, setActiveGames] = useState<Game[]>([]);
+  const [suspiciousUsers, setSuspiciousUsers] = useState<SuspiciousActivity[]>([]);
+  const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const suspiciousUsers = [
-    { id: 'U7890', name: 'Jean M.', pattern: 'Multiple large bets in short time', games: 5, totalAmount: 2500 },
-    { id: 'U6789', name: 'Marie L.', pattern: 'Unusual win pattern', games: 3, totalAmount: 1800 },
-    { id: 'U5678', name: 'Pierre D.', pattern: 'Suspicious IP changes', games: 7, totalAmount: 950 },
-  ];
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch system statistics
+        const { data: statsData, error: statsError } = await supabase
+          .from('system_statistics')
+          .select('active_games_count, active_users_count, fraud_alerts_24h_count')
+          .single();
+        
+        if (statsError) {
+          console.error('Error fetching system stats:', statsError);
+          toast({
+            title: "Erè",
+            description: "Gen yon erè ki fèt pandan n ap chaje estatistik yo.",
+            variant: "destructive"
+          });
+        } else {
+          setSystemStats(statsData);
+        }
+        
+        // Fetch active games
+        const { data: gamesData, error: gamesError } = await supabase
+          .from('games')
+          .select('*');
+        
+        if (gamesError) {
+          console.error('Error fetching games:', gamesError);
+          toast({
+            title: "Erè",
+            description: "Gen yon erè ki fèt pandan n ap chaje jeu aktif yo.",
+            variant: "destructive"
+          });
+        } else {
+          setActiveGames(gamesData || []);
+        }
+        
+        // Fetch suspicious activities
+        const { data: suspiciousData, error: suspiciousError } = await supabase
+          .from('suspicious_activities')
+          .select('id, user_name, pattern, games_count, total_amount');
+        
+        if (suspiciousError) {
+          console.error('Error fetching suspicious activities:', suspiciousError);
+          toast({
+            title: "Erè",
+            description: "Gen yon erè ki fèt pandan n ap chaje aktivite sispèk yo.",
+            variant: "destructive"
+          });
+        } else {
+          setSuspiciousUsers(suspiciousData || []);
+        }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        toast({
+          title: "Erè",
+          description: "Gen yon erè ki fèt pandan n ap chaje done yo.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, []);
+
+  // Function to handle game suspension
+  const handleSuspendGame = async (gameId: string) => {
+    try {
+      const { error } = await supabase
+        .from('games')
+        .update({ status: 'suspended' })
+        .eq('id', gameId);
+      
+      if (error) {
+        console.error('Error suspending game:', error);
+        toast({
+          title: "Erè",
+          description: "Nou pa kapab kanpe jeu sa a pou kounye a.",
+          variant: "destructive"
+        });
+      } else {
+        // Update local state
+        setActiveGames(prevGames => 
+          prevGames.map(game => 
+            game.id === gameId ? { ...game, status: 'suspended' } : game
+          )
+        );
+        
+        toast({
+          title: "Siksè",
+          description: `Jeu ${gameId} te kanpe avèk siksè.`,
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Erè",
+        description: "Gen yon erè ki fèt pandan n ap kanpe jeu a.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Function to handle suspicious user investigation
+  const handleInvestigateUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('suspicious_activities')
+        .update({ status: 'investigating' })
+        .eq('id', userId);
+      
+      if (error) {
+        console.error('Error updating investigation status:', error);
+        toast({
+          title: "Erè",
+          description: "Nou pa kapab kòmanse envestigasyon an pou kounye a.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Siksè",
+          description: "Envestigasyon kòmanse sou itilizatè sa a.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Erè",
+        description: "Gen yon erè ki fèt pandan n ap kòmanse envestigasyon an.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Chajman done yo...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -31,7 +194,7 @@ export const AdminGamingMonitoring = () => {
             <CardDescription>Kantite jeu k ap jwe kounye a</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">27</div>
+            <div className="text-3xl font-bold">{systemStats?.active_games_count || 0}</div>
           </CardContent>
         </Card>
         
@@ -41,7 +204,7 @@ export const AdminGamingMonitoring = () => {
             <CardDescription>Moun k ap jwe kounye a</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">458</div>
+            <div className="text-3xl font-bold">{systemStats?.active_users_count || 0}</div>
           </CardContent>
         </Card>
         
@@ -54,7 +217,7 @@ export const AdminGamingMonitoring = () => {
             <CardDescription>Aktivite sispèk dènye 24è</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-amber-600">12</div>
+            <div className="text-3xl font-bold text-amber-600">{systemStats?.fraud_alerts_24h_count || 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -73,52 +236,67 @@ export const AdminGamingMonitoring = () => {
               <CardDescription>Tout jeu k ap jwe oswa pral kòmanse byento</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID Jeu</TableHead>
-                    <TableHead>Tip</TableHead>
-                    <TableHead>Kantite Jouwè</TableHead>
-                    <TableHead>Lè Kòmanse</TableHead>
-                    <TableHead>Statu</TableHead>
-                    <TableHead>Aksyon</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activeGames.map(game => (
-                    <TableRow key={game.id} className={game.suspiciousActivity ? "bg-amber-50 dark:bg-amber-950/20" : ""}>
-                      <TableCell>{game.id}</TableCell>
-                      <TableCell>{game.type}</TableCell>
-                      <TableCell>{game.players}</TableCell>
-                      <TableCell>{game.startTime}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={
-                            game.status === 'active' ? "default" : 
-                            game.status === 'ending' ? "secondary" : 
-                            "outline"
-                          }
-                        >
-                          {game.status === 'active' ? "Aktif" : 
-                           game.status === 'ending' ? "Ap Fini" : 
-                           "Pral Kòmanse"}
-                        </Badge>
-                        {game.suspiciousActivity && (
-                          <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                            Sispèk
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">Detay</Button>
-                          <Button variant="destructive" size="sm">Kanpe</Button>
-                        </div>
-                      </TableCell>
+              {activeGames.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Pa gen okenn jeu aktif pou kounye a.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID Jeu</TableHead>
+                      <TableHead>Tip</TableHead>
+                      <TableHead>Kantite Jouwè</TableHead>
+                      <TableHead>Lè Kòmanse</TableHead>
+                      <TableHead>Statu</TableHead>
+                      <TableHead>Aksyon</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {activeGames.map(game => (
+                      <TableRow key={game.id} className={game.suspicious_activity ? "bg-amber-50 dark:bg-amber-950/20" : ""}>
+                        <TableCell>{game.id}</TableCell>
+                        <TableCell>{game.type}</TableCell>
+                        <TableCell>{game.players}</TableCell>
+                        <TableCell>{game.start_time}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              game.status === 'active' ? "default" : 
+                              game.status === 'ending' ? "secondary" : 
+                              game.status === 'suspended' ? "destructive" :
+                              "outline"
+                            }
+                          >
+                            {game.status === 'active' ? "Aktif" : 
+                             game.status === 'ending' ? "Ap Fini" : 
+                             game.status === 'suspended' ? "Kanpe" :
+                             "Pral Kòmanse"}
+                          </Badge>
+                          {game.suspicious_activity && (
+                            <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                              Sispèk
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm">Detay</Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              disabled={game.status === 'suspended'}
+                              onClick={() => handleSuspendGame(game.id)}
+                            >
+                              Kanpe
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -130,35 +308,47 @@ export const AdminGamingMonitoring = () => {
               <CardDescription>Aktivite ki ka endike fwod oswa manipilasyon</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID Itilizatè</TableHead>
-                    <TableHead>Non</TableHead>
-                    <TableHead>Modèl Sispèk</TableHead>
-                    <TableHead>Kantite Jeu</TableHead>
-                    <TableHead>Total Lajan</TableHead>
-                    <TableHead>Aksyon</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {suspiciousUsers.map(user => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.id}</TableCell>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.pattern}</TableCell>
-                      <TableCell>{user.games}</TableCell>
-                      <TableCell>${user.totalAmount}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">Envestige</Button>
-                          <Button variant="destructive" size="sm">Bloke</Button>
-                        </div>
-                      </TableCell>
+              {suspiciousUsers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Pa gen okenn aktivite sispèk ki detekte dènyèman.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID Itilizatè</TableHead>
+                      <TableHead>Non</TableHead>
+                      <TableHead>Modèl Sispèk</TableHead>
+                      <TableHead>Kantite Jeu</TableHead>
+                      <TableHead>Total Lajan</TableHead>
+                      <TableHead>Aksyon</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {suspiciousUsers.map(user => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.id.substring(0, 8)}</TableCell>
+                        <TableCell>{user.user_name}</TableCell>
+                        <TableCell>{user.pattern}</TableCell>
+                        <TableCell>{user.games_count}</TableCell>
+                        <TableCell>${user.total_amount.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleInvestigateUser(user.id)}
+                            >
+                              Envestige
+                            </Button>
+                            <Button variant="destructive" size="sm">Bloke</Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
