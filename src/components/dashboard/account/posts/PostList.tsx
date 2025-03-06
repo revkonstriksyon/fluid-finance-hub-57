@@ -1,7 +1,6 @@
 
 import { Post, PostData } from './Post';
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle } from "lucide-react";
 
 interface PostListProps {
   posts: PostData[];
@@ -40,12 +39,9 @@ export const PostList = ({ posts, isLoading, onLikeToggle, onDeletePost, onComme
   if (posts.length === 0) {
     return (
       <div className="finance-card p-8 text-center">
-        <div className="flex flex-col items-center gap-2">
-          <AlertCircle className="h-10 w-10 text-finance-charcoal/50 dark:text-white/50" />
-          <p className="text-finance-charcoal/70 dark:text-white/70">
-            Pa gen okenn pòs pou lemoman. Pataje premye pòs ou a!
-          </p>
-        </div>
+        <p className="text-finance-charcoal/70 dark:text-white/70">
+          Pa gen okenn pòs pou lemoman. Pataje premye pòs ou a!
+        </p>
       </div>
     );
   }

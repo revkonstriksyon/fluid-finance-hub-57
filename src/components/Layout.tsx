@@ -21,7 +21,7 @@ const Layout = ({ children }: LayoutProps) => {
       <Navbar toggleSidebar={toggleSidebar} />
       
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
         
         <main className="flex-1 overflow-y-auto p-4">
           {children}
