@@ -60,7 +60,7 @@ const PostsTab = () => {
     try {
       setIsLoading(true);
       
-      // Get posts with user profiles in a more efficient way
+      // Get all posts with user profiles, not just the current user's posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
