@@ -17,9 +17,9 @@ export const useMessagingRealtime = (
   useEffect(() => {
     if (!userId) return;
     
-    // Subscribe to new messages
-    const messagesChannel = supabase
-      .channel('public:messages')
+    // Use a single channel for all message-related subscriptions to prevent multiple connections
+    const channel = supabase
+      .channel('messaging-events')
       .on(
         'postgres_changes',
         {
@@ -33,11 +33,6 @@ export const useMessagingRealtime = (
           onNewMessage();
         }
       )
-      .subscribe();
-    
-    // Subscribe to conversation updates
-    const conversationsChannel = supabase
-      .channel('public:conversations')
       .on(
         'postgres_changes',
         {
@@ -64,10 +59,9 @@ export const useMessagingRealtime = (
       )
       .subscribe();
     
-    // Cleanup subscriptions
+    // Cleanup subscription
     return () => {
-      supabase.removeChannel(messagesChannel);
-      supabase.removeChannel(conversationsChannel);
+      supabase.removeChannel(channel);
     };
   }, [userId, onNewMessage, onConversationUpdate]);
 };

@@ -48,10 +48,14 @@ export const fetchUserProfileApi = async (userId: string) => {
  */
 export const fetchLastMessageApi = async (conversation: { user1_id: string, user2_id: string }) => {
   try {
+    // Fix: Use proper OR query with parentheses for complex conditions
     const { data: lastMessageData, error: lastMessageError } = await supabase
       .from("messages")
       .select("content, created_at, read")
-      .or(`sender_id.eq.${conversation.user1_id}.and.receiver_id.eq.${conversation.user2_id},sender_id.eq.${conversation.user2_id}.and.receiver_id.eq.${conversation.user1_id}`)
+      .or(
+        `and(sender_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}),` +
+        `and(sender_id.eq.${conversation.user2_id},receiver_id.eq.${conversation.user1_id})`
+      )
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
@@ -70,10 +74,14 @@ export const fetchLastMessageApi = async (conversation: { user1_id: string, user
  */
 export const fetchMessagesApi = async (conversation: { user1_id: string, user2_id: string }) => {
   try {
+    // Fix: Use proper OR query with parentheses for complex conditions
     const { data: messagesData, error: messagesError } = await supabase
       .from("messages")
       .select("*")
-      .or(`sender_id.eq.${conversation.user1_id}.and.receiver_id.eq.${conversation.user2_id},sender_id.eq.${conversation.user2_id}.and.receiver_id.eq.${conversation.user1_id}`)
+      .or(
+        `and(sender_id.eq.${conversation.user1_id},receiver_id.eq.${conversation.user2_id}),` +
+        `and(sender_id.eq.${conversation.user2_id},receiver_id.eq.${conversation.user1_id})`
+      )
       .order("created_at", { ascending: true });
     
     if (messagesError) throw messagesError;
