@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -227,6 +228,34 @@ export const usePostOperations = () => {
     }
   };
 
+  const handleCommentAdded = async (postId: string) => {
+    try {
+      // Get updated comment count
+      const { count: commentsCount, error } = await supabase
+        .from('post_comments')
+        .select('id', { count: 'exact', head: true })
+        .eq('post_id', postId);
+        
+      if (error) {
+        console.error('Error getting updated comment count:', error);
+        return;
+      }
+      
+      // Update the post in local state with the new comment count
+      setPosts(posts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            comments: commentsCount || 0
+          };
+        }
+        return post;
+      }));
+    } catch (error) {
+      console.error('Error updating comment count:', error);
+    }
+  };
+
   const addNewPost = (newPost: PostData) => {
     setPosts(prevPosts => [newPost, ...prevPosts]);
   };
@@ -237,6 +266,7 @@ export const usePostOperations = () => {
     fetchPosts,
     handleLike,
     addNewPost,
-    deletePost
+    deletePost,
+    handleCommentAdded
   };
 };

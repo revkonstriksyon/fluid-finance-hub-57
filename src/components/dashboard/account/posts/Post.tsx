@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Comments } from './Comments';
 
 export interface PostData {
   id: string;
@@ -32,12 +33,14 @@ interface PostProps {
   post: PostData;
   onLikeToggle: (postId: string, currentlyLiked: boolean) => Promise<void>;
   onDeletePost?: (postId: string) => Promise<void>;
+  onCommentAdded?: (postId: string) => Promise<void>;
 }
 
-export const Post = ({ post, onLikeToggle, onDeletePost }: PostProps) => {
+export const Post = ({ post, onLikeToggle, onDeletePost, onCommentAdded }: PostProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const isPostOwner = user?.id === post.user_id;
+  const [localCommentsCount, setLocalCommentsCount] = useState(post.comments);
   
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -79,6 +82,13 @@ export const Post = ({ post, onLikeToggle, onDeletePost }: PostProps) => {
         description: 'Yon erè te fèt pandan efase pòs la',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleCommentAdded = async () => {
+    setLocalCommentsCount(prevCount => prevCount + 1);
+    if (onCommentAdded) {
+      await onCommentAdded(post.id);
     }
   };
   
@@ -133,13 +143,9 @@ export const Post = ({ post, onLikeToggle, onDeletePost }: PostProps) => {
           <div className="flex gap-4 text-finance-charcoal/70 dark:text-white/70">
             <button 
               className="flex items-center gap-1 text-sm hover:text-finance-blue transition-colors" 
-              onClick={() => toast({
-                title: 'Kòmantè yo',
-                description: 'Fonksyonalite kòmantè yo poko disponib',
-              })}
             >
               <MessageSquare className="h-4 w-4" />
-              <span>{post.comments}</span>
+              <span>{localCommentsCount}</span>
             </button>
             <button 
               className={`flex items-center gap-1 text-sm hover:text-finance-danger transition-colors ${
@@ -151,6 +157,13 @@ export const Post = ({ post, onLikeToggle, onDeletePost }: PostProps) => {
               <span>{post.likes}</span>
             </button>
           </div>
+
+          {/* Comments section */}
+          <Comments 
+            postId={post.id}
+            commentsCount={localCommentsCount}
+            onCommentAdded={handleCommentAdded}
+          />
         </div>
       </div>
     </div>

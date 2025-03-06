@@ -5,7 +5,7 @@ import { PostList } from './posts/PostList';
 import { usePostOperations } from '@/hooks/usePostOperations';
 
 const PostsTab = () => {
-  const { posts, isLoading, fetchPosts, handleLike, addNewPost, deletePost } = usePostOperations();
+  const { posts, isLoading, fetchPosts, handleLike, addNewPost, deletePost, handleCommentAdded } = usePostOperations();
   
   // Fetch posts on component mount
   useEffect(() => {
@@ -21,6 +21,7 @@ const PostsTab = () => {
         isLoading={isLoading}
         onLikeToggle={handleLike}
         onDeletePost={deletePost}
+        onCommentAdded={handleCommentAdded}
       />
     </div>
   );
