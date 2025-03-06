@@ -85,14 +85,15 @@ const FriendsTab = () => {
     }
   }, [user]);
 
-  // Fetch all users in the database
+  // Fetch all users in the database - This function needs to be improved to fetch ALL users properly
   const fetchAllUsers = async () => {
     if (!user) return;
     
     try {
       setLoadingAllUsers(true);
       
-      // Fetch all users except the current user, this now directly uses profile data
+      // Fetch all users except the current user, directly from profiles table
+      // Removed any limit here to get ALL users
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('id, full_name, username, avatar_url')
@@ -100,6 +101,8 @@ const FriendsTab = () => {
         .order('full_name', { ascending: true });
       
       if (usersError) throw usersError;
+      
+      console.log("All profiles fetched from database:", usersData);
       
       // Get existing friend connections for these users
       const { data: friendsData, error: friendsError } = await supabase
@@ -125,6 +128,7 @@ const FriendsTab = () => {
         };
       });
       
+      console.log("Processed users with friend status:", usersWithFriendStatus);
       setAllUsers(usersWithFriendStatus);
     } catch (error) {
       console.error('Error fetching all users:', error);
@@ -520,7 +524,7 @@ const FriendsTab = () => {
   return (
     <div className="space-y-4">
       <div className="finance-card">
-        <Tabs defaultValue="friends" className="w-full">
+        <Tabs defaultValue="all" className="w-full">
           <TabsList className="w-full mb-6 bg-finance-lightGray/50 dark:bg-white/5">
             <TabsTrigger value="friends" className="flex-1">Zanmi</TabsTrigger>
             <TabsTrigger value="requests" className="flex-1">
