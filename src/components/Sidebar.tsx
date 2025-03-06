@@ -1,5 +1,5 @@
 
-import { Home, CreditCard, Banknote, BarChart3, User, DollarSign, GamepadIcon, X, LogOut } from 'lucide-react';
+import { Home, CreditCard, Banknote, BarChart3, User, DollarSign, GamepadIcon, X, LogOut, Shield } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -19,6 +19,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
     { icon: GamepadIcon, label: 'Jeu & Pari', path: '/' },
     { icon: BarChart3, label: 'Trading & Bous', path: '/trading' },
     { icon: User, label: 'Mon Compte', path: '/profile' },
+    { icon: Shield, label: 'Admin Panel', path: '/admin' },
   ];
 
   const handleLogout = async () => {

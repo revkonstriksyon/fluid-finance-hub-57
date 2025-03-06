@@ -17,6 +17,7 @@ import TradingPage from "./pages/trading/TradingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import AdminPanel from "./pages/admin/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/privacy" element={<ProtectedRoute><PrivacyPage /></ProtectedRoute>} />
             <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsPage /></ProtectedRoute>} />
             <Route path="/trading" element={<ProtectedRoute><TradingPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
