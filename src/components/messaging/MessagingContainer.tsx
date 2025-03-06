@@ -28,7 +28,9 @@ export const MessagingContainer = ({ user }: MessagingContainerProps) => {
     setShowNewMessageModal,
     handleSendMessage,
     startNewConversation,
-    navigateToUserProfile
+    navigateToUserProfile,
+    deleteMessage,
+    deleteConversation
   } = useMessageActions();
 
   return (
@@ -57,6 +59,8 @@ export const MessagingContainer = ({ user }: MessagingContainerProps) => {
           sendingMessage={sendingMessage}
           navigateToUserProfile={navigateToUserProfile}
           onNewConversation={() => setShowNewMessageModal(true)}
+          deleteMessage={deleteMessage}
+          deleteConversation={deleteConversation}
         />
       </div>
       

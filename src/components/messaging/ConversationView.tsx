@@ -1,13 +1,29 @@
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, Plus } from "lucide-react";
+import { Send, Loader2, Plus, Trash2, MoreVertical, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Conversation, Message } from "@/types/messaging";
 import { User } from "@supabase/supabase-js";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ConversationViewProps {
   activeConversation: Conversation | null;
@@ -20,6 +36,8 @@ interface ConversationViewProps {
   sendingMessage: boolean;
   navigateToUserProfile: (userId: string) => void;
   onNewConversation: () => void;
+  deleteMessage?: (messageId: string) => Promise<void>;
+  deleteConversation?: (conversationId: string) => Promise<void>;
 }
 
 export const ConversationView = ({
@@ -32,9 +50,13 @@ export const ConversationView = ({
   handleSendMessage,
   sendingMessage,
   navigateToUserProfile,
-  onNewConversation
+  onNewConversation,
+  deleteMessage,
+  deleteConversation
 }: ConversationViewProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [showDeleteConversationDialog, setShowDeleteConversationDialog] = useState(false);
 
   // Function to get status color
   const getStatusColor = (status?: string) => {
@@ -61,6 +83,20 @@ export const ConversationView = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleDeleteMessage = async () => {
+    if (messageToDelete && deleteMessage) {
+      await deleteMessage(messageToDelete);
+      setMessageToDelete(null);
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    if (activeConversation && deleteConversation) {
+      await deleteConversation(activeConversation.id);
+      setShowDeleteConversationDialog(false);
+    }
+  };
 
   if (!activeConversation) {
     return (
@@ -107,7 +143,7 @@ export const ConversationView = ({
             </div>
           </div>
         </div>
-        <div>
+        <div className="flex items-center space-x-2">
           <Button 
             variant="outline" 
             size="sm"
@@ -115,6 +151,20 @@ export const ConversationView = ({
           >
             Wè Pwofil
           </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowDeleteConversationDialog(true)} className="text-red-500">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Siprime Konvèsasyon
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       
@@ -131,7 +181,7 @@ export const ConversationView = ({
         ) : (
           messages.map(message => (
             <div key={message.id} className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] ${message.sender_id === user?.id ? 
+              <div className={`max-w-[75%] relative group ${message.sender_id === user?.id ? 
                 'bg-finance-blue text-white rounded-t-lg rounded-bl-lg' : 
                 'bg-finance-lightGray/70 dark:bg-white/10 text-finance-charcoal dark:text-white rounded-t-lg rounded-br-lg'
               } p-3`}>
@@ -139,6 +189,16 @@ export const ConversationView = ({
                 <p className={`text-xs mt-1 ${message.sender_id === user?.id ? 'text-white/70' : 'text-finance-charcoal/70 dark:text-white/70'}`}>
                   {formatTime(message.created_at)}
                 </p>
+                
+                {message.sender_id === user?.id && deleteMessage && (
+                  <button 
+                    onClick={() => setMessageToDelete(message.id)}
+                    className="absolute opacity-0 group-hover:opacity-100 -right-3 -top-3 bg-white dark:bg-gray-800 rounded-full p-1 text-red-500 hover:text-red-700 transition-opacity"
+                    aria-label="Delete message"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             </div>
           ))
@@ -176,6 +236,42 @@ export const ConversationView = ({
           </Button>
         </div>
       </div>
+
+      {/* Delete Message Dialog */}
+      <AlertDialog open={!!messageToDelete} onOpenChange={(open) => !open && setMessageToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Siprime Mesaj</AlertDialogTitle>
+            <AlertDialogDescription>
+              Èske ou sèten ou vle siprime mesaj sa a? Aksyon sa a pa kapab anile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anile</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMessage} className="bg-red-500 hover:bg-red-600">
+              Siprime
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Conversation Dialog */}
+      <AlertDialog open={showDeleteConversationDialog} onOpenChange={setShowDeleteConversationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Siprime Konvèsasyon</AlertDialogTitle>
+            <AlertDialogDescription>
+              Èske ou sèten ou vle siprime konvèsasyon sa a? Tout mesaj yo ap efase epi aksyon sa a pa kapab anile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anile</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConversation} className="bg-red-500 hover:bg-red-600">
+              Siprime
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
