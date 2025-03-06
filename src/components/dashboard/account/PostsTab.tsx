@@ -54,7 +54,7 @@ const PostsTab = () => {
           content,
           created_at,
           user_id,
-          profiles:user_id (
+          profiles(
             full_name,
             username,
             avatar_url
@@ -160,12 +160,19 @@ const PostsTab = () => {
       setIsSubmitting(true);
       
       // Insert post into database
-      const { error } = await supabase
+      const { data: newPost, error } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
           content: values.content,
-        });
+        })
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id
+        `)
+        .single();
         
       if (error) {
         console.error('Error creating post:', error);
@@ -176,10 +183,27 @@ const PostsTab = () => {
         });
         return;
       }
+
+      // Instead of fetching all posts again, create a new formatted post and add it to the state
+      const newFormattedPost: Post = {
+        id: newPost.id,
+        content: newPost.content,
+        created_at: newPost.created_at,
+        likes: 0,
+        comments: 0,
+        user_liked: false,
+        user: {
+          full_name: profile?.full_name || 'Unknown User',
+          username: profile?.username || 'unknown',
+          avatar_url: profile?.avatar_url || null,
+        }
+      };
       
-      // Reset form and refresh posts
+      // Add the new post to the top of the posts array
+      setPosts(prevPosts => [newFormattedPost, ...prevPosts]);
+      
+      // Reset form
       form.reset();
-      fetchPosts();
       
       toast({
         title: 'Pòs kreye',
