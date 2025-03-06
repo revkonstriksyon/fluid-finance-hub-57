@@ -3,8 +3,7 @@ import { useEffect, useState } from 'react';
 import { CreatePostForm } from './posts/CreatePostForm';
 import { PostList } from './posts/PostList';
 import { usePostOperations } from '@/hooks/usePostOperations';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 const PostsTab = () => {
   const { posts, isLoading, fetchPosts, handleLike, addNewPost, deletePost, handleCommentAdded } = usePostOperations();
