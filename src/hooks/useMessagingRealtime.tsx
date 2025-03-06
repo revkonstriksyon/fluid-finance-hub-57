@@ -3,8 +3,8 @@ import { useEffect, useCallback } from 'react';
 import { supabase } from "@/lib/supabase";
 
 type RealtimeCallbacks = {
-  onNewMessage: () => void;
-  onConversationUpdate: () => void;
+  onNewMessage: (payload?: any) => void;
+  onConversationUpdate: (payload?: any) => void;
 };
 
 export const useMessagingRealtime = (
@@ -17,20 +17,32 @@ export const useMessagingRealtime = (
   useEffect(() => {
     if (!userId) return;
     
-    // Use a single channel for all message-related subscriptions to prevent multiple connections
+    // Use a single channel for all message-related subscriptions
     const channel = supabase
       .channel('messaging-events')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'messages',
           filter: `receiver_id=eq.${userId}`
         },
-        () => {
-          // Refresh data when a new message is received
-          onNewMessage();
+        (payload) => {
+          // Directly pass the payload to the callback
+          onNewMessage(payload);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${userId}`
+        },
+        (payload) => {
+          onNewMessage(payload);
         }
       )
       .on(
@@ -41,8 +53,8 @@ export const useMessagingRealtime = (
           table: 'conversations',
           filter: `user1_id=eq.${userId}`
         },
-        () => {
-          onConversationUpdate();
+        (payload) => {
+          onConversationUpdate(payload);
         }
       )
       .on(
@@ -53,11 +65,13 @@ export const useMessagingRealtime = (
           table: 'conversations',
           filter: `user2_id=eq.${userId}`
         },
-        () => {
-          onConversationUpdate();
+        (payload) => {
+          onConversationUpdate(payload);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
     
     // Cleanup subscription
     return () => {

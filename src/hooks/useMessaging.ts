@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -21,13 +22,18 @@ export const useMessaging = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
+  
+  // Use refs to prevent unnecessary re-renders
+  const fetchingRef = useRef(false);
+  const activateConversationRef = useRef<string | null>(null);
 
   // Fetch all conversations for the current user
-  const fetchConversations = useCallback(async () => {
-    if (!user) return;
+  const fetchConversations = useCallback(async (skipLoading = false) => {
+    if (!user || fetchingRef.current) return;
     
     try {
-      setLoading(true);
+      if (!skipLoading) setLoading(true);
+      fetchingRef.current = true;
       
       const conversationsData = await fetchConversationsApi(user.id);
       const enrichedConversations = await enrichConversationData(conversationsData, user.id);
@@ -37,12 +43,14 @@ export const useMessaging = () => {
       // Set the first conversation as active if none is selected
       if (enrichedConversations.length > 0 && !activeConversation) {
         setActiveConversation(enrichedConversations[0]);
+        activateConversationRef.current = enrichedConversations[0].id;
         await fetchMessages(enrichedConversations[0].id);
       } else if (activeConversation) {
-        // Update the active conversation with new data
+        // Update the active conversation with new data without changing selection
         const updatedActiveConversation = enrichedConversations.find(
           conv => conv.id === activeConversation.id
         );
+        
         if (updatedActiveConversation) {
           setActiveConversation(updatedActiveConversation);
         }
@@ -55,7 +63,8 @@ export const useMessaging = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      if (!skipLoading) setLoading(false);
+      fetchingRef.current = false;
     }
   }, [user, activeConversation, toast]);
 
@@ -84,8 +93,8 @@ export const useMessaging = () => {
         if (unreadMessages.length > 0) {
           await markMessagesAsReadApi(unreadMessages.map(msg => msg.id));
           
-          // Refresh conversations to update unread counts
-          fetchConversations();
+          // Refresh conversations to update unread counts without changing UI state
+          fetchConversations(true);
         }
       }
     } catch (error) {
@@ -116,9 +125,10 @@ export const useMessaging = () => {
         activeConversation.id
       );
       
-      // Refresh messages and conversations
-      await fetchMessages(activeConversation.id);
-      await fetchConversations();
+      // Add the new message to the state immediately
+      if (messageData) {
+        setMessages(prev => [...prev, messageData]);
+      }
       
       return messageData;
     } catch (error) {
@@ -132,7 +142,7 @@ export const useMessaging = () => {
     } finally {
       setSendingMessage(false);
     }
-  }, [user, activeConversation, fetchMessages, fetchConversations, toast]);
+  }, [user, activeConversation, toast]);
 
   // Create a new conversation with another user
   const createConversation = useCallback(async (otherUserId: string) => {
@@ -162,15 +172,36 @@ export const useMessaging = () => {
     }
   }, [user, fetchConversations, fetchMessages, conversations, toast]);
 
-  // Set up realtime subscriptions through the custom hook
-  useMessagingRealtime(user?.id, {
-    onNewMessage: useCallback(() => {
-      fetchConversations();
-      if (activeConversation) {
-        fetchMessages(activeConversation.id);
+  // Handle new messages via real-time updates
+  const handleNewMessage = useCallback((payload: any) => {
+    console.log("New message received:", payload);
+    
+    // Only fetch if the message is for the active conversation
+    if (activeConversation) {
+      const message = payload.new;
+      
+      if (message) {
+        // If the message belongs to the active conversation, update messages
+        const isForActiveConversation = 
+          (activeConversation.user1_id === message.sender_id && activeConversation.user2_id === message.receiver_id) ||
+          (activeConversation.user1_id === message.receiver_id && activeConversation.user2_id === message.sender_id);
+        
+        if (isForActiveConversation) {
+          fetchMessages(activeConversation.id);
+        }
       }
-    }, [fetchConversations, fetchMessages, activeConversation]),
-    onConversationUpdate: fetchConversations
+    }
+    
+    // Update conversations list to show new messages
+    fetchConversations(true);
+  }, [activeConversation, fetchMessages, fetchConversations]);
+
+  // Set up realtime subscriptions
+  useMessagingRealtime(user?.id, {
+    onNewMessage: handleNewMessage,
+    onConversationUpdate: useCallback(() => {
+      fetchConversations(true);
+    }, [fetchConversations])
   });
 
   // Initial data fetch
@@ -179,6 +210,14 @@ export const useMessaging = () => {
       fetchConversations();
     }
   }, [user, fetchConversations]);
+
+  // Fetch messages when active conversation changes
+  useEffect(() => {
+    if (activeConversation && activeConversation.id !== activateConversationRef.current) {
+      activateConversationRef.current = activeConversation.id;
+      fetchMessages(activeConversation.id);
+    }
+  }, [activeConversation, fetchMessages]);
 
   return {
     conversations,
