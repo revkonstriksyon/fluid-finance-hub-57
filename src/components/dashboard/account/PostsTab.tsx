@@ -31,11 +31,11 @@ interface PostWithProfile {
   content: string;
   created_at: string;
   user_id: string;
-  profiles?: {
+  profiles: {
     full_name: string | null;
     username: string | null;
     avatar_url: string | null;
-  };
+  } | null;
 }
 
 const PostsTab = () => {
@@ -68,7 +68,7 @@ const PostsTab = () => {
           content,
           created_at,
           user_id,
-          profiles!posts_user_id_fkey (
+          profiles(
             full_name,
             username,
             avatar_url
@@ -86,9 +86,11 @@ const PostsTab = () => {
         return;
       }
 
+      console.log('Posts data:', postsData);
+
       // Process posts and get additional data
       const processedPosts = await Promise.all(
-        (postsData as PostWithProfile[]).map(async (post) => {
+        (postsData as unknown as PostWithProfile[]).map(async (post) => {
           // Get likes count
           const { count: likesCount } = await supabase
             .from('post_likes')
@@ -114,12 +116,17 @@ const PostsTab = () => {
             userLiked = !!likeData;
           }
 
-          // Extract the profile data from the joined query safely
-          const profileData = post.profiles || {
-            full_name: null,
-            username: null,
-            avatar_url: null
-          };
+          // First get the profile entry, which may be an array with one item or null
+          let profileData = null;
+          if (post.profiles) {
+            // If it's an array, take the first item
+            if (Array.isArray(post.profiles) && post.profiles.length > 0) {
+              profileData = post.profiles[0];
+            } else {
+              // If it's already an object, use it directly
+              profileData = post.profiles;
+            }
+          }
           
           // Create formatted post with proper user information
           const formattedPost: Post = {
@@ -130,9 +137,9 @@ const PostsTab = () => {
             comments: commentsCount || 0,
             user_liked: userLiked,
             user: {
-              full_name: profileData.full_name || 'User',
-              username: profileData.username || '',
-              avatar_url: profileData.avatar_url || null,
+              full_name: profileData?.full_name || 'User',
+              username: profileData?.username || '',
+              avatar_url: profileData?.avatar_url || null,
             }
           };
             
