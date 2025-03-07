@@ -8,8 +8,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from '@/contexts/AuthContext';
+import { useBankData } from '@/hooks/useBankData';
+import { useBankOperations } from '@/hooks/useBankOperations';
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDistanceToNow } from 'date-fns';
 
 const BankSection = () => {
+  const { user } = useAuth();
+  const { accounts, transactions, loading } = useBankData();
+  const { 
+    makeDeposit, 
+    makeTransfer, 
+    payBill, 
+    addAccount,
+    processingDeposit,
+    processingTransfer,
+    processingBill,
+    processingAddAccount
+  } = useBankOperations();
+  
   const [hideBalance, setHideBalance] = useState(false);
   const [amount, setAmount] = useState("");
   const [recipientName, setRecipientName] = useState("");
@@ -24,6 +42,7 @@ const BankSection = () => {
   const [newAccountName, setNewAccountName] = useState("");
   const [newAccountType, setNewAccountType] = useState("savings");
   const [showAccountDetails, setShowAccountDetails] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   
   const { toast } = useToast();
   
@@ -31,7 +50,25 @@ const BankSection = () => {
     setHideBalance(!hideBalance);
   };
 
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
+    if (!user) {
+      toast({
+        title: "Koneksyon obligatwa",
+        description: "Ou dwe konekte pou fè yon transfè.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedAccountId) {
+      toast({
+        title: "Kont pa seleksyone",
+        description: "Tanpri chwazi yon kont pou fè transfè a.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!amount || !recipientName || !recipientAccount || !transferPurpose) {
       toast({
         title: "Enfomasyon manke",
@@ -41,19 +78,43 @@ const BankSection = () => {
       return;
     }
 
-    toast({
-      title: "Transfè reyisi",
-      description: `Ou voye $${amount} bay ${recipientName}`,
-    });
+    const result = await makeTransfer(
+      selectedAccountId,
+      null, // We don't have specific user ID in this simple implementation
+      null, // We don't have specific account ID in this simple implementation
+      Number(amount),
+      `Transfè bay ${recipientName} - ${recipientAccount}`,
+      transferPurpose
+    );
 
-    // Reset form
-    setAmount("");
-    setRecipientName("");
-    setRecipientAccount("");
-    setTransferPurpose("");
+    if (result.success) {
+      // Reset form
+      setAmount("");
+      setRecipientName("");
+      setRecipientAccount("");
+      setTransferPurpose("");
+    }
   };
 
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
+    if (!user) {
+      toast({
+        title: "Koneksyon obligatwa",
+        description: "Ou dwe konekte pou fè yon depo.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedAccountId) {
+      toast({
+        title: "Kont pa seleksyone",
+        description: "Tanpri chwazi yon kont pou fè depo a.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!depositAmount || !depositMethod) {
       toast({
         title: "Enfomasyon manke",
@@ -63,16 +124,38 @@ const BankSection = () => {
       return;
     }
 
-    toast({
-      title: "Depo reyisi",
-      description: `Ou depoze $${depositAmount} nan kont ou`,
-    });
+    const result = await makeDeposit(
+      selectedAccountId,
+      Number(depositAmount),
+      depositMethod,
+      `Depo via ${depositMethod}`
+    );
 
-    // Reset form
-    setDepositAmount("");
+    if (result.success) {
+      // Reset form
+      setDepositAmount("");
+    }
   };
 
-  const handlePayBill = () => {
+  const handlePayBill = async () => {
+    if (!user) {
+      toast({
+        title: "Koneksyon obligatwa",
+        description: "Ou dwe konekte pou peye yon bòdwo.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedAccountId) {
+      toast({
+        title: "Kont pa seleksyone",
+        description: "Tanpri chwazi yon kont pou fè peman an.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!billProvider || !billAccount || !billAmount) {
       toast({
         title: "Enfomasyon manke",
@@ -82,18 +165,31 @@ const BankSection = () => {
       return;
     }
 
-    toast({
-      title: "Peman reyisi",
-      description: `Ou peye $${billAmount} pou ${billProvider}`,
-    });
+    const result = await payBill(
+      selectedAccountId,
+      billProvider,
+      billAccount,
+      Number(billAmount)
+    );
 
-    // Reset form
-    setBillProvider("");
-    setBillAccount("");
-    setBillAmount("");
+    if (result.success) {
+      // Reset form
+      setBillProvider("");
+      setBillAccount("");
+      setBillAmount("");
+    }
   };
 
-  const handleAddAccount = () => {
+  const handleAddAccount = async () => {
+    if (!user) {
+      toast({
+        title: "Koneksyon obligatwa",
+        description: "Ou dwe konekte pou kreye yon kont.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!newAccountName || !newAccountType) {
       toast({
         title: "Enfomasyon manke",
@@ -103,32 +199,78 @@ const BankSection = () => {
       return;
     }
 
-    toast({
-      title: "Kont kreye",
-      description: `Ou kreye yon nouvo kont ${newAccountType}: ${newAccountName}`,
-    });
+    const result = await addAccount(newAccountName, newAccountType);
 
-    // Reset form
-    setNewAccountName("");
-    setNewAccountType("savings");
+    if (result.success) {
+      // Reset form
+      setNewAccountName("");
+      setNewAccountType("savings");
+    }
   };
   
-  // Sample transaction data
-  const transactions = [
-    { id: 1, type: 'deposit', amount: 1500, description: 'Salè Mwa Jen', date: '24 Jen, 2023', icon: ArrowDown, iconColor: 'text-finance-success'},
-    { id: 2, type: 'withdrawal', amount: 45, description: 'Market Place', date: '22 Jen, 2023', icon: ArrowUp, iconColor: 'text-finance-danger'},
-    { id: 3, type: 'withdrawal', amount: 120, description: 'Achte Telefòn', date: '20 Jen, 2023', icon: ArrowUp, iconColor: 'text-finance-danger'},
-    { id: 4, type: 'deposit', amount: 300, description: 'Travay Freelance', date: '18 Jen, 2023', icon: ArrowDown, iconColor: 'text-finance-success'},
-  ];
+  // Get primary account for display in total balance
+  const primaryAccount = accounts.find(account => account.is_primary) || accounts[0];
+  
+  // Format account type display
+  const formatAccountType = (type: string) => {
+    switch(type.toLowerCase()) {
+      case 'checking': return 'Kont Kouran';
+      case 'savings': return 'Kont Epay';
+      case 'investment': return 'Kont Envestisman';
+      case 'business': return 'Kont Biznis';
+      default: return type;
+    }
+  };
+
+  // Get icon for transaction type
+  const getTransactionIcon = (type: string) => {
+    switch(type) {
+      case 'deposit':
+      case 'transfer_received':
+        return ArrowDown;
+      case 'withdrawal':
+      case 'transfer_sent':
+      case 'payment':
+        return ArrowUp;
+      default:
+        return ArrowRight;
+    }
+  };
+
+  // Format transaction amount with +/- sign
+  const formatTransactionAmount = (transaction: any) => {
+    const isPositive = transaction.transaction_type === 'deposit' || transaction.transaction_type === 'transfer_received';
+    return `${isPositive ? '+' : '-'}$${Math.abs(transaction.amount)}`;
+  };
+
+  // Get transaction color class
+  const getTransactionColorClass = (transaction: any) => {
+    const isPositive = transaction.transaction_type === 'deposit' || transaction.transaction_type === 'transfer_received';
+    return isPositive ? 'text-finance-success' : 'text-finance-danger';
+  };
+
+  // Get background color class for transaction icon
+  const getTransactionBgClass = (transaction: any) => {
+    const isPositive = transaction.transaction_type === 'deposit' || transaction.transaction_type === 'transfer_received';
+    return isPositive ? 'bg-finance-success/10' : 'bg-finance-danger/10';
+  };
+
+  // Format relative time for transaction
+  const formatRelativeTime = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   // Account details data
   const accountDetails = {
-    accountNumber: "1234567890",
     iban: "HT12 ABCD 1234 5678 9012 3456 78",
     swiftCode: "HABKHT2X",
     openDate: "15 Jen, 2022",
     interestRate: "1.25%",
-    availableBalance: 1450,
+    availableBalance: primaryAccount?.balance || 0,
     pendingTransactions: 0,
     minimumBalance: 100,
     maxWithdrawal: 1000,
@@ -145,10 +287,16 @@ const BankSection = () => {
         </div>
         
         <div className="mb-4">
-          <h2 className="text-3xl font-bold">
-            {hideBalance ? '••••••' : '$1,985.40'}
-          </h2>
-          <p className="text-white/70 text-sm mt-1">Dènye mizajou: Jodi a, 10:45 AM</p>
+          {loading ? (
+            <Skeleton className="h-9 w-36 bg-white/10" />
+          ) : (
+            <>
+              <h2 className="text-3xl font-bold">
+                {hideBalance ? '••••••' : primaryAccount ? `$${primaryAccount.balance}` : '$0.00'}
+              </h2>
+              <p className="text-white/70 text-sm mt-1">Dènye mizajou: Jodi a, {new Date().toLocaleTimeString()}</p>
+            </>
+          )}
         </div>
         
         <div className="flex space-x-2">
@@ -167,6 +315,27 @@ const BankSection = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {accounts.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="deposit-account">Kont</Label>
+                    <Select 
+                      value={selectedAccountId || ''} 
+                      onValueChange={setSelectedAccountId}
+                    >
+                      <SelectTrigger id="deposit-account">
+                        <SelectValue placeholder="Chwazi kont" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map(account => (
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.account_name} - {formatAccountType(account.account_type)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
                 <div className="space-y-2">
                   <Label htmlFor="deposit-amount">Montan</Label>
                   <div className="relative">
@@ -216,7 +385,12 @@ const BankSection = () => {
                 )}
               </div>
               <DialogFooter>
-                <Button onClick={handleDeposit}>Depoze Lajan</Button>
+                <Button 
+                  onClick={handleDeposit} 
+                  disabled={processingDeposit || !depositAmount || !depositMethod || !selectedAccountId}
+                >
+                  {processingDeposit ? 'Ap trete...' : 'Depoze Lajan'}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -243,6 +417,27 @@ const BankSection = () => {
                 </TabsList>
                 
                 <TabsContent value="transfer" className="space-y-4">
+                  {accounts.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="transfer-account">Kont</Label>
+                      <Select 
+                        value={selectedAccountId || ''} 
+                        onValueChange={setSelectedAccountId}
+                      >
+                        <SelectTrigger id="transfer-account">
+                          <SelectValue placeholder="Chwazi kont" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts.map(account => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.account_name} - {formatAccountType(account.account_type)} (${account.balance})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                
                   <div className="space-y-2">
                     <Label htmlFor="recipient">Non Benefisyè</Label>
                     <Input 
@@ -293,12 +488,37 @@ const BankSection = () => {
                     </Select>
                   </div>
                   
-                  <Button onClick={handleTransfer} className="w-full">
-                    Voye Lajan
+                  <Button 
+                    onClick={handleTransfer} 
+                    className="w-full"
+                    disabled={processingTransfer || !amount || !recipientName || !recipientAccount || !transferPurpose || !selectedAccountId}
+                  >
+                    {processingTransfer ? 'Ap trete...' : 'Voye Lajan'}
                   </Button>
                 </TabsContent>
                 
                 <TabsContent value="bill" className="space-y-4">
+                  {accounts.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="bill-pay-account">Kont</Label>
+                      <Select 
+                        value={selectedAccountId || ''} 
+                        onValueChange={setSelectedAccountId}
+                      >
+                        <SelectTrigger id="bill-pay-account">
+                          <SelectValue placeholder="Chwazi kont" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts.map(account => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.account_name} - {formatAccountType(account.account_type)} (${account.balance})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                
                   <div className="space-y-2">
                     <Label htmlFor="provider">Konpayi</Label>
                     <Select value={billProvider} onValueChange={setBillProvider}>
@@ -339,8 +559,12 @@ const BankSection = () => {
                     </div>
                   </div>
                   
-                  <Button onClick={handlePayBill} className="w-full">
-                    Peye Bòdwo
+                  <Button 
+                    onClick={handlePayBill} 
+                    className="w-full"
+                    disabled={processingBill || !billProvider || !billAccount || !billAmount || !selectedAccountId}
+                  >
+                    {processingBill ? 'Ap trete...' : 'Peye Bòdwo'}
                   </Button>
                 </TabsContent>
                 
@@ -375,7 +599,11 @@ const BankSection = () => {
                     </div>
                   </div>
                   
-                  <Button onClick={handleTransfer} className="w-full">
+                  <Button 
+                    onClick={handleTransfer} 
+                    className="w-full"
+                    disabled={!amount || !paymentCategory}
+                  >
                     Peye
                   </Button>
                 </TabsContent>
@@ -390,33 +618,51 @@ const BankSection = () => {
           <h3 className="section-title mb-6">Kont yo</h3>
           
           <div className="space-y-4">
-            <div 
-              className="flex items-center justify-between p-3 bg-finance-lightGray/50 dark:bg-white/5 rounded-lg cursor-pointer hover:bg-finance-lightGray dark:hover:bg-white/10 transition-colors"
-              onClick={() => setShowAccountDetails(!showAccountDetails)}
-            >
-              <div className="flex items-center">
-                <div className="bg-finance-blue/20 p-2 rounded-lg mr-3">
-                  <CreditCard className="h-5 w-5 text-finance-blue" />
-                </div>
-                <div>
-                  <p className="font-medium">Kont Kouran</p>
-                  <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Aksè fasilman ak lajan</p>
-                </div>
+            {loading ? (
+              Array(2).fill(0).map((_, index) => (
+                <Skeleton key={index} className="h-20 w-full bg-finance-lightGray/30" />
+              ))
+            ) : accounts.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-finance-charcoal/70 dark:text-white/70">Ou pa gen okenn kont pou kounye a.</p>
               </div>
-              <div className="text-right">
-                <p className="font-bold">{hideBalance ? '••••' : '$1,450'}</p>
-                <p className="text-xs text-finance-charcoal/70 dark:text-white/70">
-                  {showAccountDetails ? "Kache detay" : "Wè detay"}
-                </p>
-              </div>
-            </div>
+            ) : (
+              accounts.map(account => (
+                <div
+                  key={account.id}
+                  className="flex items-center justify-between p-3 bg-finance-lightGray/50 dark:bg-white/5 rounded-lg cursor-pointer hover:bg-finance-lightGray dark:hover:bg-white/10 transition-colors"
+                  onClick={() => {
+                    setShowAccountDetails(!showAccountDetails);
+                    setSelectedAccountId(account.id);
+                  }}
+                >
+                  <div className="flex items-center">
+                    <div className={`${account.account_type === 'savings' ? 'bg-finance-gold/20' : 'bg-finance-blue/20'} p-2 rounded-lg mr-3`}>
+                      <CreditCard className={`h-5 w-5 ${account.account_type === 'savings' ? 'text-finance-gold' : 'text-finance-blue'}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium">{formatAccountType(account.account_type)}</p>
+                      <p className="text-sm text-finance-charcoal/70 dark:text-white/70">{account.account_name}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">{hideBalance ? '••••' : `$${account.balance}`}</p>
+                    <p className="text-xs text-finance-charcoal/70 dark:text-white/70">
+                      {showAccountDetails && selectedAccountId === account.id ? "Kache detay" : "Wè detay"}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
             
-            {showAccountDetails && (
+            {showAccountDetails && selectedAccountId && (
               <div className="p-4 bg-finance-lightGray/30 dark:bg-white/5 rounded-lg">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                   <div>
                     <p className="text-xs text-finance-charcoal/70 dark:text-white/70">Nimewo Kont</p>
-                    <p className="text-sm font-medium">{accountDetails.accountNumber}</p>
+                    <p className="text-sm font-medium">
+                      {accounts.find(a => a.id === selectedAccountId)?.account_number || ''}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-finance-charcoal/70 dark:text-white/70">IBAN</p>
@@ -436,7 +682,9 @@ const BankSection = () => {
                   </div>
                   <div>
                     <p className="text-xs text-finance-charcoal/70 dark:text-white/70">Balans Disponib</p>
-                    <p className="text-sm font-medium">${accountDetails.availableBalance}</p>
+                    <p className="text-sm font-medium">
+                      ${accounts.find(a => a.id === selectedAccountId)?.balance || 0}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-finance-charcoal/70 dark:text-white/70">Tranzaksyon an Atant</p>
@@ -460,19 +708,6 @@ const BankSection = () => {
                 </div>
               </div>
             )}
-            
-            <div className="flex items-center justify-between p-3 bg-finance-lightGray/50 dark:bg-white/5 rounded-lg hover:bg-finance-lightGray dark:hover:bg-white/10 transition-colors">
-              <div className="flex items-center">
-                <div className="bg-finance-gold/20 p-2 rounded-lg mr-3">
-                  <CreditCard className="h-5 w-5 text-finance-gold" />
-                </div>
-                <div>
-                  <p className="font-medium">Kont Epay</p>
-                  <p className="text-sm text-finance-charcoal/70 dark:text-white/70">Ekonomi avèk enterè</p>
-                </div>
-              </div>
-              <p className="font-bold">{hideBalance ? '••••' : '$535.40'}</p>
-            </div>
             
             <Dialog>
               <DialogTrigger asChild>
@@ -515,7 +750,12 @@ const BankSection = () => {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={handleAddAccount}>Kreye Kont</Button>
+                  <Button 
+                    onClick={handleAddAccount}
+                    disabled={processingAddAccount || !newAccountName || !newAccountType}
+                  >
+                    {processingAddAccount ? 'Ap trete...' : 'Kreye Kont'}
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -529,22 +769,37 @@ const BankSection = () => {
           </div>
           
           <div className="space-y-4">
-            {transactions.map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between p-3 hover:bg-finance-lightGray/50 dark:hover:bg-white/5 rounded-lg transition-colors">
-                <div className="flex items-center">
-                  <div className={`p-2 rounded-lg mr-3 ${transaction.type === 'deposit' ? 'bg-finance-success/10' : 'bg-finance-danger/10'}`}>
-                    <transaction.icon className={`h-5 w-5 ${transaction.iconColor}`} />
-                  </div>
-                  <div>
-                    <p className="font-medium">{transaction.description}</p>
-                    <p className="text-sm text-finance-charcoal/70 dark:text-white/70">{transaction.date}</p>
-                  </div>
-                </div>
-                <p className={`font-bold ${transaction.type === 'deposit' ? 'text-finance-success' : 'text-finance-danger'}`}>
-                  {transaction.type === 'deposit' ? '+' : '-'}${transaction.amount}
-                </p>
+            {loading ? (
+              Array(4).fill(0).map((_, index) => (
+                <Skeleton key={index} className="h-16 w-full bg-finance-lightGray/30" />
+              ))
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-finance-charcoal/70 dark:text-white/70">Ou pa gen okenn tranzaksyon pou kounye a.</p>
               </div>
-            ))}
+            ) : (
+              transactions.map((transaction) => {
+                const TransactionIcon = getTransactionIcon(transaction.transaction_type);
+                return (
+                  <div key={transaction.id} className="flex items-center justify-between p-3 hover:bg-finance-lightGray/50 dark:hover:bg-white/5 rounded-lg transition-colors">
+                    <div className="flex items-center">
+                      <div className={`p-2 rounded-lg mr-3 ${getTransactionBgClass(transaction)}`}>
+                        <TransactionIcon className={`h-5 w-5 ${getTransactionColorClass(transaction)}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium">{transaction.description}</p>
+                        <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
+                          {formatRelativeTime(transaction.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <p className={`font-bold ${getTransactionColorClass(transaction)}`}>
+                      {formatTransactionAmount(transaction)}
+                    </p>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

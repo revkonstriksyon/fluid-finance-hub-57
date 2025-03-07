@@ -1,14 +1,44 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import BankSection from '@/components/dashboard/BankSection';
 import CreditSection from '@/components/dashboard/CreditSection';
 import GamblingSection from '@/components/dashboard/gambling/GamblingSection';
 import TradingSection from '@/components/dashboard/TradingSection';
 import AccountSection from '@/components/dashboard/AccountSection';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('bank');
+  const { user, loading } = useAuth();
+  
+  // If URL has a hash, set the active section accordingly
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash && ['bank', 'credit', 'gambling', 'trading', 'account'].includes(hash)) {
+      setActiveSection(hash);
+    }
+  }, []);
+
+  // Update URL hash when active section changes
+  useEffect(() => {
+    window.location.hash = activeSection;
+  }, [activeSection]);
+  
+  if (loading) {
+    return (
+      <Layout>
+        <div className="w-full flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-finance-blue"></div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth/login" replace />;
+  }
   
   return (
     <Layout>
