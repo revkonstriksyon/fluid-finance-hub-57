@@ -861,4 +861,30 @@ const BankSection = () => {
               transactions.map((transaction) => {
                 const TransactionIcon = getTransactionIcon(transaction.transaction_type);
                 return (
-                  <div key={transaction.id} className="flex items-center justify-between p-3 hover:bg-finance-lightGray/50 dark:hover:bg-white/5
+                  <div key={transaction.id} className="flex items-center justify-between p-3 hover:bg-finance-lightGray/50 dark:hover:bg-white/5 rounded-lg">
+                    <div className="flex items-center">
+                      <div className={`${getTransactionBgClass(transaction)} p-2 rounded-lg mr-3`}>
+                        <TransactionIcon className={`h-5 w-5 ${getTransactionColorClass(transaction)}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium">{transaction.description}</p>
+                        <p className="text-xs text-finance-charcoal/70 dark:text-white/70">
+                          {formatRelativeTime(transaction.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <p className={`font-bold ${getTransactionColorClass(transaction)}`}>
+                      {formatTransactionAmount(transaction)}
+                    </p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BankSection;
