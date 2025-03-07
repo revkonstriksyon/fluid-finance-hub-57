@@ -12,6 +12,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const {
     profile,
@@ -28,11 +29,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await refreshUserProfile(user?.id);
   };
 
+  // Check if the user is an admin
+  const checkAdminStatus = (email: string | undefined) => {
+    // Admin check based on email
+    const adminEmail = 'admin@gmail.com';
+    return email === adminEmail;
+  };
+
   useEffect(() => {
     // Get session on initial load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Check admin status
+      setIsAdmin(checkAdminStatus(session?.user?.email));
       
       if (session?.user) {
         fetchUserProfile(session.user.id);
@@ -45,6 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Check admin status
+      setIsAdmin(checkAdminStatus(session?.user?.email));
       
       if (session?.user) {
         fetchUserProfile(session.user.id);
@@ -64,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       bankAccounts,
       loading, 
       userLoading,
+      isAdmin,
       ...authOperations,
       refreshProfile
     }}>

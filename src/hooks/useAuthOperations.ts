@@ -13,10 +13,18 @@ export const useAuthOperations = () => {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       
-      toast({
-        title: "Koneksyon reyisi",
-        description: "Ou konekte nan kont ou.",
-      });
+      // Special message for admin
+      if (email === 'admin@gmail.com') {
+        toast({
+          title: "Koneksyon admin reyisi",
+          description: "Ou konekte kòm administratè.",
+        });
+      } else {
+        toast({
+          title: "Koneksyon reyisi",
+          description: "Ou konekte nan kont ou.",
+        });
+      }
       
       // Let the component handle navigation
       return { error: null };

@@ -32,6 +32,7 @@ export interface AuthContextType {
   bankAccounts: BankAccount[];
   loading: boolean;
   userLoading: boolean;
+  isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any, user: User | null }>;
   signOut: () => Promise<{ error: any }>;

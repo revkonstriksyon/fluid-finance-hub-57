@@ -12,23 +12,36 @@ import { AdminReports } from '@/components/admin/AdminReports';
 import { AdminSystemConfig } from '@/components/admin/AdminSystemConfig';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { Shield } from 'lucide-react';
+import { Shield, AlertCircle } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 const AdminPanel = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { toast } = useToast();
   
-  // In a real app, you would check if the user has admin role
-  // For now, we'll just check if user exists
   if (loading) {
     return <div className="h-screen flex items-center justify-center">Chajman...</div>;
   }
   
   if (!user) {
+    toast({
+      title: "Aksè Refize",
+      description: "Ou dwe konekte pou w ka aksede paj sa.",
+      variant: "destructive"
+    });
     return <Navigate to="/auth/login" replace />;
   }
   
-  // Later implement proper admin check with role-based authorization
+  // Check if the user is an admin
+  if (!isAdmin) {
+    toast({
+      title: "Aksè Refize",
+      description: "Ou pa gen pèmisyon pou w aksede paj sa.",
+      variant: "destructive"
+    });
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <Layout>

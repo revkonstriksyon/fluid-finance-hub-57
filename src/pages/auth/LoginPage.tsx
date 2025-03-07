@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -30,7 +31,7 @@ type PhoneFormValues = z.infer<typeof phoneFormSchema>;
 type OtpFormValues = z.infer<typeof otpFormSchema>;
 
 const LoginPage = () => {
-  const { signIn, signInWithPhoneNumber, verifyPhoneOTP, signInWithGoogleAccount } = useAuth();
+  const { signIn, signInWithPhoneNumber, verifyPhoneOTP, signInWithGoogleAccount, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -63,7 +64,12 @@ const LoginPage = () => {
     try {
       const { error } = await signIn(values.email, values.password);
       if (!error) {
-        navigate("/");
+        // If user is admin, redirect to admin page
+        if (values.email === 'admin@gmail.com' && values.password === 'admin1') {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
       }
     } catch (error) {
       console.error("Error during login:", error);
