@@ -148,6 +148,36 @@ export const useBankOperations = () => {
         return { success: false };
       }
 
+      // Find a valid account to receive the transfer
+      let receiverAccountId = toAccountId;
+      
+      // If no specific account ID was provided but we have a user ID, 
+      // try to find their primary account
+      if (!receiverAccountId && toUserId) {
+        const { data: receiverAccounts, error: receiverError } = await supabase
+          .from('bank_accounts')
+          .select('id')
+          .eq('user_id', toUserId)
+          .eq('is_primary', true)
+          .single();
+          
+        if (!receiverError && receiverAccounts) {
+          receiverAccountId = receiverAccounts.id;
+        } else {
+          // Try to get any account if primary not found
+          const { data: anyAccount, error: anyAccountError } = await supabase
+            .from('bank_accounts')
+            .select('id')
+            .eq('user_id', toUserId)
+            .limit(1)
+            .single();
+            
+          if (!anyAccountError && anyAccount) {
+            receiverAccountId = anyAccount.id;
+          }
+        }
+      }
+      
       // Default to sending to another user if no specific toAccountId is provided
       const receiverId = toUserId || user.id;
       
@@ -158,7 +188,7 @@ export const useBankOperations = () => {
           sender_id: user.id,
           receiver_id: receiverId,
           sender_account_id: fromAccountId,
-          receiver_account_id: toAccountId,
+          receiver_account_id: receiverAccountId,
           amount,
           description: description || '',
           reference: purpose || 'General transfer',
@@ -193,12 +223,12 @@ export const useBankOperations = () => {
       }
 
       // If we're transferring to another user and we have their account ID
-      if (receiverId !== user.id && toAccountId) {
+      if (receiverId !== user.id && receiverAccountId) {
         // Create a transaction record for the receiver (deposit)
         const { data: receiverTransactionData, error: receiverTransactionError } = await supabase
           .rpc('create_transaction', {
             p_user_id: receiverId,
-            p_account_id: toAccountId,
+            p_account_id: receiverAccountId,
             p_transaction_type: 'transfer_received',
             p_amount: amount,
             p_description: `Transfè resevwa de ${user.email}`,

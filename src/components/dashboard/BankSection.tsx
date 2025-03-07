@@ -1,5 +1,4 @@
-
-import { ArrowDown, ArrowUp, CreditCard, Eye, EyeOff, Plus, Search, Building, ArrowRight, Calendar, Clock, Info } from 'lucide-react';
+import { ArrowDown, ArrowUp, CreditCard, Eye, EyeOff, Plus, Search, Building, ArrowRight, Calendar, Clock, Info, UserIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +12,7 @@ import { useBankData } from '@/hooks/useBankData';
 import { useBankOperations } from '@/hooks/useBankOperations';
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from 'date-fns';
+import { UserSearchForTransfer } from './UserSearchForTransfer';
 
 const BankSection = () => {
   const { user } = useAuth();
@@ -46,8 +46,17 @@ const BankSection = () => {
   
   const { toast } = useToast();
   
+  const [transferMode, setTransferMode] = useState<'account' | 'user'>('account');
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserEmail, setSelectedUserEmail] = useState<string>('');
+  
   const toggleBalance = () => {
     setHideBalance(!hideBalance);
+  };
+
+  const handleUserSelect = (userId: string, userEmail: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserEmail(userEmail);
   };
 
   const handleTransfer = async () => {
@@ -69,30 +78,59 @@ const BankSection = () => {
       return;
     }
 
-    if (!amount || !recipientName || !recipientAccount || !transferPurpose) {
-      toast({
-        title: "Enfomasyon manke",
-        description: "Tanpri ranpli tout chan yo",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (transferMode === 'account') {
+      if (!amount || !recipientName || !recipientAccount || !transferPurpose) {
+        toast({
+          title: "Enfomasyon manke",
+          description: "Tanpri ranpli tout chan yo",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    const result = await makeTransfer(
-      selectedAccountId,
-      null, // We don't have specific user ID in this simple implementation
-      null, // We don't have specific account ID in this simple implementation
-      Number(amount),
-      `Transfè bay ${recipientName} - ${recipientAccount}`,
-      transferPurpose
-    );
+      const result = await makeTransfer(
+        selectedAccountId,
+        null, // We don't have specific user ID
+        null, // We don't have specific account ID
+        Number(amount),
+        `Transfè bay ${recipientName} - ${recipientAccount}`,
+        transferPurpose
+      );
 
-    if (result.success) {
-      // Reset form
-      setAmount("");
-      setRecipientName("");
-      setRecipientAccount("");
-      setTransferPurpose("");
+      if (result.success) {
+        // Reset form
+        setAmount("");
+        setRecipientName("");
+        setRecipientAccount("");
+        setTransferPurpose("");
+      }
+    } else {
+      // User-to-user transfer
+      if (!amount || !selectedUserId || !transferPurpose) {
+        toast({
+          title: "Enfomasyon manke",
+          description: "Tanpri ranpli tout chan yo",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const result = await makeTransfer(
+        selectedAccountId,
+        selectedUserId,
+        null, // The backend will find user's account
+        Number(amount),
+        `Transfè bay ${selectedUserEmail}`,
+        transferPurpose
+      );
+
+      if (result.success) {
+        // Reset form
+        setAmount("");
+        setSelectedUserId(null);
+        setSelectedUserEmail("");
+        setTransferPurpose("");
+      }
     }
   };
 
@@ -437,26 +475,56 @@ const BankSection = () => {
                       </Select>
                     </div>
                   )}
-                
-                  <div className="space-y-2">
-                    <Label htmlFor="recipient">Non Benefisyè</Label>
-                    <Input 
-                      id="recipient" 
-                      value={recipientName} 
-                      onChange={(e) => setRecipientName(e.target.value)}
-                      placeholder="Non konplè"
-                    />
-                  </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="account">Nimewo Kont</Label>
-                    <Input 
-                      id="account" 
-                      value={recipientAccount} 
-                      onChange={(e) => setRecipientAccount(e.target.value)}
-                      placeholder="Nimewo kont oswa IBAN"
-                    />
+                    <Label>Tip Transfè</Label>
+                    <div className="flex space-x-2">
+                      <Button 
+                        type="button" 
+                        variant={transferMode === 'account' ? 'default' : 'outline'} 
+                        className="flex-1"
+                        onClick={() => setTransferMode('account')}
+                      >
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Kont
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant={transferMode === 'user' ? 'default' : 'outline'} 
+                        className="flex-1"
+                        onClick={() => setTransferMode('user')}
+                      >
+                        <UserIcon className="h-4 w-4 mr-2" />
+                        Itilizatè
+                      </Button>
+                    </div>
                   </div>
+                  
+                  {transferMode === 'account' ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="recipient">Non Benefisyè</Label>
+                        <Input 
+                          id="recipient" 
+                          value={recipientName} 
+                          onChange={(e) => setRecipientName(e.target.value)}
+                          placeholder="Non konplè"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="account">Nimewo Kont</Label>
+                        <Input 
+                          id="account" 
+                          value={recipientAccount} 
+                          onChange={(e) => setRecipientAccount(e.target.value)}
+                          placeholder="Nimewo kont oswa IBAN"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <UserSearchForTransfer onUserSelect={handleUserSelect} />
+                  )}
                   
                   <div className="space-y-2">
                     <Label htmlFor="amount">Montan</Label>
@@ -488,10 +556,22 @@ const BankSection = () => {
                     </Select>
                   </div>
                   
+                  {transferMode === 'user' && selectedUserEmail && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                      <p className="text-sm">
+                        Transfè pral ale bay: <span className="font-medium">{selectedUserEmail}</span>
+                      </p>
+                    </div>
+                  )}
+                  
                   <Button 
                     onClick={handleTransfer} 
                     className="w-full"
-                    disabled={processingTransfer || !amount || !recipientName || !recipientAccount || !transferPurpose || !selectedAccountId}
+                    disabled={
+                      processingTransfer || !amount || !transferPurpose || !selectedAccountId || 
+                      (transferMode === 'account' && (!recipientName || !recipientAccount)) ||
+                      (transferMode === 'user' && !selectedUserId)
+                    }
                   >
                     {processingTransfer ? 'Ap trete...' : 'Voye Lajan'}
                   </Button>
@@ -781,30 +861,4 @@ const BankSection = () => {
               transactions.map((transaction) => {
                 const TransactionIcon = getTransactionIcon(transaction.transaction_type);
                 return (
-                  <div key={transaction.id} className="flex items-center justify-between p-3 hover:bg-finance-lightGray/50 dark:hover:bg-white/5 rounded-lg transition-colors">
-                    <div className="flex items-center">
-                      <div className={`p-2 rounded-lg mr-3 ${getTransactionBgClass(transaction)}`}>
-                        <TransactionIcon className={`h-5 w-5 ${getTransactionColorClass(transaction)}`} />
-                      </div>
-                      <div>
-                        <p className="font-medium">{transaction.description}</p>
-                        <p className="text-sm text-finance-charcoal/70 dark:text-white/70">
-                          {formatRelativeTime(transaction.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                    <p className={`font-bold ${getTransactionColorClass(transaction)}`}>
-                      {formatTransactionAmount(transaction)}
-                    </p>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default BankSection;
+                  <div key={transaction.id} className="flex items-center justify-between p-3 hover:bg-finance-lightGray/50 dark:hover:bg-white/5
