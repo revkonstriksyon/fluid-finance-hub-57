@@ -14,7 +14,7 @@ import { VirtualCard } from './VirtualCard';
 import { VirtualCard as VirtualCardType } from '@/types/auth';
 
 export const VirtualCardsSection = () => {
-  const { virtualCards, loading, creating, generateVirtualCard, simulateTransaction } = useVirtualCards();
+  const { cards, loading, createCard, simulateTransaction } = useVirtualCards();
   const [initialBalance, setInitialBalance] = useState("");
   const [showCreateCard, setShowCreateCard] = useState(false);
   const [showPurchase, setShowPurchase] = useState(false);
@@ -23,14 +23,22 @@ export const VirtualCardsSection = () => {
   const [purchaseDescription, setPurchaseDescription] = useState("");
   const [processing, setProcessing] = useState(false);
 
+  // Track if a card creation is in progress
+  const [creating, setCreating] = useState(false);
+
   // Handle generate card
   const handleGenerateCard = async () => {
     if (!initialBalance || parseFloat(initialBalance) <= 0) return;
     
-    const result = await generateVirtualCard(parseFloat(initialBalance));
-    if (result.success) {
-      setShowCreateCard(false);
-      setInitialBalance("");
+    setCreating(true);
+    try {
+      const result = await createCard();
+      if (result.success) {
+        setShowCreateCard(false);
+        setInitialBalance("");
+      }
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -123,7 +131,7 @@ export const VirtualCardsSection = () => {
           <Skeleton className="h-56 w-full rounded-xl" />
           <Skeleton className="h-56 w-full rounded-xl hidden md:block" />
         </div>
-      ) : virtualCards.length === 0 ? (
+      ) : cards.length === 0 ? (
         <div className="finance-card p-8 flex flex-col items-center justify-center text-center">
           <CreditCard className="h-12 w-12 text-finance-midGray mb-4" />
           <h3 className="text-lg font-bold mb-2">Pa gen kat vityèl</h3>
@@ -138,7 +146,7 @@ export const VirtualCardsSection = () => {
       ) : (
         <>
           <div className="grid md:grid-cols-2 gap-6">
-            {virtualCards.map(card => (
+            {cards.map(card => (
               <VirtualCard key={card.id} card={card} />
             ))}
           </div>
@@ -155,12 +163,12 @@ export const VirtualCardsSection = () => {
               
               <Button 
                 onClick={() => {
-                  if (virtualCards.length > 0) {
-                    setSelectedCard(virtualCards.find(card => card.is_active) || virtualCards[0]);
+                  if (cards.length > 0) {
+                    setSelectedCard(cards.find(card => card.is_active) || cards[0]);
                     setShowPurchase(true);
                   }
                 }}
-                disabled={!virtualCards.some(card => card.is_active)}
+                disabled={!cards.some(card => card.is_active)}
                 className="w-full"
               >
                 Simile Acha
