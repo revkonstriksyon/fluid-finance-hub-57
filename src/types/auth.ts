@@ -1,3 +1,4 @@
+
 import { Session, User } from "@supabase/supabase-js";
 
 export type ProfileType = {
@@ -12,7 +13,7 @@ export type ProfileType = {
   updated_at?: string;
 };
 
-// Adding the explicit Profile export as it's referenced in several places
+// Export Profile type explicitly
 export type Profile = ProfileType;
 
 export type BankAccount = {
@@ -24,6 +25,7 @@ export type BankAccount = {
   created_at: string;
 };
 
+// Export AuthContextType interface explicitly
 export interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -43,5 +45,5 @@ export interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-// We're keeping the default export, but also adding named exports
+// Maintain default export for backward compatibility
 export default AuthContextType;
