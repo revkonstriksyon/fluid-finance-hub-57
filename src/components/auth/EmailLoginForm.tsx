@@ -38,7 +38,8 @@ export const EmailLoginForm = ({ signIn }: EmailLoginFormProps) => {
     try {
       const { error } = await signIn(values.email, values.password);
       if (!error) {
-        // If user is admin, redirect to admin page
+        // If user is admin (hardcoded for the demo), redirect to admin page
+        // In a real app, this would check a role in the auth claims or database
         if (values.email === 'admin@gmail.com' && values.password === 'admin1') {
           navigate("/admin");
         } else {

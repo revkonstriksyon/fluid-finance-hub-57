@@ -11,16 +11,25 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
-  const { signOut } = useAuth();
+  const { signOut, isAdmin } = useAuth();
   
-  const menuItems = [
-    { icon: Banknote, label: 'My Bank', path: '/', active: true },
-    { icon: CreditCard, label: 'Kredi', path: '/' },
-    { icon: GamepadIcon, label: 'Jeu & Pari', path: '/' },
-    { icon: BarChart3, label: 'Trading & Bous', path: '/trading' },
-    { icon: User, label: 'Mon Compte', path: '/profile' },
-    { icon: Shield, label: 'Admin Panel', path: '/admin' },
-  ];
+  // Define menu items, filtering admin panel for admins only
+  const getMenuItems = () => {
+    const items = [
+      { icon: Banknote, label: 'My Bank', path: '/', active: true },
+      { icon: CreditCard, label: 'Kredi', path: '/' },
+      { icon: GamepadIcon, label: 'Jeu & Pari', path: '/' },
+      { icon: BarChart3, label: 'Trading & Bous', path: '/trading' },
+      { icon: User, label: 'Mon Compte', path: '/profile' },
+    ];
+    
+    // Add admin panel link for admin users
+    if (isAdmin) {
+      items.push({ icon: Shield, label: 'Admin Panel', path: '/admin' });
+    }
+    
+    return items;
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -44,7 +53,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
       </div>
       
       <nav className="p-4 space-y-2">
-        {menuItems.map((item, index) => (
+        {getMenuItems().map((item, index) => (
           <Link
             key={index}
             to={item.path}

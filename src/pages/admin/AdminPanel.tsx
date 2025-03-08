@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
@@ -14,11 +14,36 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Shield, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Auth2FADialog } from '@/components/admin/Auth2FADialog';
 
 const AdminPanel = () => {
   const { user, loading, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showMFADialog, setShowMFADialog] = useState(false);
   const { toast } = useToast();
+  
+  // Check for 2FA verification on admin login
+  useEffect(() => {
+    if (user && isAdmin) {
+      // In a real app, we would check if the admin has already completed 2FA for this session
+      // For demo purposes, we'll just show the 2FA dialog on first load
+      const has2FAVerified = sessionStorage.getItem('admin_2fa_verified');
+      if (!has2FAVerified) {
+        setShowMFADialog(true);
+      }
+    }
+  }, [user, isAdmin]);
+  
+  // Handle 2FA verification
+  const handle2FASuccess = () => {
+    sessionStorage.setItem('admin_2fa_verified', 'true');
+    setShowMFADialog(false);
+    toast({
+      title: "Otantifikasyon 2FA Reyisi",
+      description: "Ou gen aksè konplè nan Panèl Administratè a.",
+      variant: "default"
+    });
+  };
   
   if (loading) {
     return <div className="h-screen flex items-center justify-center">Chajman...</div>;
@@ -103,6 +128,13 @@ const AdminPanel = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* 2FA Authentication Dialog */}
+      <Auth2FADialog 
+        isOpen={showMFADialog} 
+        onSuccess={handle2FASuccess} 
+        onOpenChange={setShowMFADialog}
+      />
     </Layout>
   );
 };
