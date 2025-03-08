@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -134,7 +133,7 @@ export const AdminUserManagement = () => {
     );
   };
 
-  const formatJoinedDate = (date: string | null) => {
+  const formatJoinedDate = (date: string | null | undefined) => {
     if (!date) return "N/A";
     
     const joinedDate = new Date(date);
@@ -337,6 +336,7 @@ export const AdminUserManagement = () => {
                                       </CardContent>
                                     </Card>
                                   </TabsContent>
+                                  
                                   
                                   <TabsContent value="transactions">
                                     <Card>

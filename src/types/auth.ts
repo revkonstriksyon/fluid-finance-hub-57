@@ -5,8 +5,15 @@ export type ProfileType = {
   full_name: string;
   avatar_url: string;
   phone?: string;
+  username?: string;
+  location?: string;
+  bio?: string;
+  joined_date?: string;
   updated_at?: string;
 };
+
+// Adding the explicit Profile export as it's referenced in several places
+export type Profile = ProfileType;
 
 export type BankAccount = {
   id: string;
@@ -17,7 +24,7 @@ export type BankAccount = {
   created_at: string;
 };
 
-interface AuthContextType {
+export interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: ProfileType | null;
@@ -36,4 +43,5 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
+// We're keeping the default export, but also adding named exports
 export default AuthContextType;
