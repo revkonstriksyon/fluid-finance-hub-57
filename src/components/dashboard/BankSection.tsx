@@ -7,6 +7,10 @@ import { useBankOperations } from '@/hooks/useBankOperations';
 import { BalanceCard } from './bank/BalanceCard';
 import { AccountList } from './bank/AccountList';
 import { TransactionList } from './bank/TransactionList';
+import { VirtualCardsSection } from './bank/VirtualCardsSection';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DepositWithAlternativesDialog } from './bank/dialogs/DepositWithAlternativesDialog';
+import { BillPaymentDialog } from './bank/dialogs/BillPaymentDialog';
 
 const BankSection = () => {
   const { user } = useAuth();
@@ -244,6 +248,28 @@ const BankSection = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Bank ak Finansman</h1>
+        
+        <div className="flex items-center space-x-2">
+          <DepositWithAlternativesDialog
+            accounts={accounts}
+            selectedAccountId={selectedAccountId}
+            setSelectedAccountId={setSelectedAccountId}
+            depositAmount={depositAmount}
+            setDepositAmount={setDepositAmount}
+            handleDeposit={handleDeposit}
+            processingDeposit={processingDeposit}
+          />
+          
+          <BillPaymentDialog
+            accounts={accounts}
+            selectedAccountId={selectedAccountId}
+            setSelectedAccountId={setSelectedAccountId}
+          />
+        </div>
+      </div>
+      
       <BalanceCard
         loading={loading}
         hideBalance={hideBalance}
@@ -287,24 +313,38 @@ const BankSection = () => {
         processingBill={processingBill}
       />
       
-      <div className="grid md:grid-cols-2 gap-6">
-        <AccountList
-          accounts={accounts}
-          loading={loading}
-          hideBalance={hideBalance}
-          newAccountName={newAccountName}
-          setNewAccountName={setNewAccountName}
-          newAccountType={newAccountType}
-          setNewAccountType={setNewAccountType}
-          handleAddAccount={handleAddAccount}
-          processingAddAccount={processingAddAccount}
-        />
+      <Tabs defaultValue="accounts" className="w-full">
+        <TabsList className="w-full mb-4">
+          <TabsTrigger value="accounts" className="flex-1">Kont</TabsTrigger>
+          <TabsTrigger value="cards" className="flex-1">Kat Vityèl</TabsTrigger>
+          <TabsTrigger value="transactions" className="flex-1">Tranzaksyon</TabsTrigger>
+        </TabsList>
         
-        <TransactionList
-          transactions={transactions}
-          loading={loading}
-        />
-      </div>
+        <TabsContent value="accounts" className="space-y-6">
+          <AccountList
+            accounts={accounts}
+            loading={loading}
+            hideBalance={hideBalance}
+            newAccountName={newAccountName}
+            setNewAccountName={setNewAccountName}
+            newAccountType={newAccountType}
+            setNewAccountType={setNewAccountType}
+            handleAddAccount={handleAddAccount}
+            processingAddAccount={processingAddAccount}
+          />
+        </TabsContent>
+        
+        <TabsContent value="cards" className="space-y-6">
+          <VirtualCardsSection />
+        </TabsContent>
+        
+        <TabsContent value="transactions" className="space-y-6">
+          <TransactionList
+            transactions={transactions}
+            loading={loading}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

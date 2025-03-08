@@ -25,6 +25,42 @@ export type BankAccount = {
   created_at: string;
 };
 
+export type PaymentMethod = {
+  id: string;
+  user_id: string;
+  type: 'moncash' | 'natcash' | 'agent' | 'card';
+  details: {
+    moncash_phone?: string;
+    natcash_phone?: string;
+    agent_code?: string;
+    card_last4?: string;
+    card_brand?: string;
+  };
+  is_verified: boolean;
+  created_at: string;
+};
+
+export type VirtualCard = {
+  id: string;
+  user_id: string;
+  card_number: string;
+  expiration: string;
+  cvv: string;
+  balance: number;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type Bill = {
+  id: string;
+  user_id: string;
+  type: 'electricity' | 'water' | 'rent' | 'internet';
+  amount: number;
+  bill_number: string;
+  paid_at: string | null;
+  created_at: string;
+};
+
 // Export AuthContextType interface explicitly
 export interface AuthContextType {
   session: Session | null;
