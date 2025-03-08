@@ -36,11 +36,11 @@ export const UserSearchForTransfer = ({ onUserSelect }: UserSearchForTransferPro
 
     setSearching(true);
     try {
-      // Search for users by email or username
+      // First get profiles that match the search query
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, full_name')
-        .or(`username.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
+        .or(`username.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%`)
         .limit(5);
 
       if (error) {
@@ -53,21 +53,18 @@ export const UserSearchForTransfer = ({ onUserSelect }: UserSearchForTransferPro
         return;
       }
 
-      // Get the email for each profile (requiring an Auth API call)
-      const usersWithAuth = await Promise.all(
-        (data || []).map(async (profile) => {
-          // Get user email from auth (this is a mock since direct auth.users query isn't available)
-          // In a real scenario, you'd store emails in profiles table or use a server function
-          return {
-            ...profile,
-            email: profile.username ? `${profile.username}@example.com` : 'unknown@example.com'
-          };
-        })
-      );
+      // Map the profiles to include email (for display purposes)
+      const usersWithEmail = (data || []).map(profile => {
+        return {
+          ...profile,
+          // Use username as a mock email since we don't have real emails
+          email: profile.username ? `${profile.username}@example.com` : 'unknown@example.com'
+        };
+      });
 
-      setSearchResults(usersWithAuth);
+      setSearchResults(usersWithEmail);
 
-      if (usersWithAuth.length === 0) {
+      if (usersWithEmail.length === 0) {
         toast({
           title: "Okenn itilizatè pa jwenn",
           description: "Nou pa t jwenn okenn itilizatè ki koresponn ak rechèch ou a.",
@@ -101,7 +98,7 @@ export const UserSearchForTransfer = ({ onUserSelect }: UserSearchForTransferPro
             id="user-search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Imèl oswa non itilizatè"
+            placeholder="Non oswa non itilizatè"
             onKeyDown={handleKeyPress}
             className="flex-1"
           />

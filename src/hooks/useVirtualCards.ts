@@ -283,14 +283,15 @@ export const useVirtualCards = () => {
         return { success: false };
       }
 
-      // Create a transaction record
+      // Create a transaction record 
       const { data: transactionData, error: transactionError } = await supabase
-        .rpc('create_transaction', {
-          p_user_id: user.id,
-          p_account_id: cardId, // Using card ID as account ID
-          p_transaction_type: 'payment',
-          p_amount: amount,
-          p_description: description
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: cardId, // Using card ID as account ID
+          transaction_type: 'payment',
+          amount: amount,
+          description: description
         });
 
       if (transactionError) {

@@ -18,6 +18,7 @@ export type Database = {
           created_at: string | null
           currency: string
           id: string
+          is_primary: boolean | null
           updated_at: string | null
           user_id: string
         }
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string | null
           currency?: string
           id?: string
+          is_primary?: boolean | null
           updated_at?: string | null
           user_id: string
         }
@@ -40,7 +42,38 @@ export type Database = {
           created_at?: string | null
           currency?: string
           id?: string
+          is_primary?: boolean | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bills: {
+        Row: {
+          amount: number
+          bill_number: string
+          created_at: string
+          id: string
+          paid_at: string | null
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bill_number: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bill_number?: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          type?: string | null
           user_id?: string
         }
         Relationships: []
@@ -120,6 +153,33 @@ export type Database = {
           read?: boolean
           receiver_id?: string
           sender_id?: string
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          is_verified: boolean | null
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          is_verified?: boolean | null
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          is_verified?: boolean | null
+          type?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -285,12 +345,55 @@ export type Database = {
           },
         ]
       }
+      virtual_cards: {
+        Row: {
+          balance: number | null
+          card_number: string
+          created_at: string
+          cvv: string
+          expiration: string
+          id: string
+          is_active: boolean | null
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          card_number: string
+          created_at?: string
+          cvv: string
+          expiration: string
+          id?: string
+          is_active?: boolean | null
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          card_number?: string
+          created_at?: string
+          cvv?: string
+          expiration?: string
+          id?: string
+          is_active?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_transaction: {
+        Args: {
+          p_user_id: string
+          p_account_id: string
+          p_transaction_type: string
+          p_amount: number
+          p_description?: string
+          p_reference_id?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

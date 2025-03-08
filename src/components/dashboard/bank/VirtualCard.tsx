@@ -12,7 +12,7 @@ interface VirtualCardProps {
 
 export const VirtualCard = ({ card }: VirtualCardProps) => {
   const { toast } = useToast();
-  const { toggleCardStatus } = useVirtualCards();
+  const { toggleCardStatus, simulateTransaction } = useVirtualCards();
   const [showCardDetails, setShowCardDetails] = useState(false);
   const [processing, setProcessing] = useState(false);
 
@@ -52,6 +52,39 @@ export const VirtualCard = ({ card }: VirtualCardProps) => {
           description: card.is_active ? 
             "Kat la dezaktive. Ou pa kapab fè okenn tranzaksyon ak li." : 
             "Kat la aktive. Ou kapab fè tranzaksyon ak li kounye a.",
+        });
+      }
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Handle a test transaction
+  const handleTestTransaction = async () => {
+    if (!card.is_active) {
+      toast({
+        title: "Kat inaktif",
+        description: "Ou pa kapab fè tranzaksyon ak yon kat ki dezaktive.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      // Generate a random small amount for the test transaction
+      const amount = Math.floor(Math.random() * 10) + 1; // $1-$10
+      
+      const result = await simulateTransaction(
+        card.id,
+        amount,
+        "Test tranzaksyon"
+      );
+      
+      if (result.success) {
+        toast({
+          title: "Tranzaksyon reyisi",
+          description: `$${amount} retire nan kat la pou yon test tranzaksyon.`,
         });
       }
     } finally {
@@ -143,6 +176,17 @@ export const VirtualCard = ({ card }: VirtualCardProps) => {
           <p className="font-mono">${card.balance.toFixed(2)}</p>
         </div>
       </div>
+      
+      {/* Test transaction button */}
+      <Button
+        variant="ghost" 
+        size="sm"
+        className="absolute bottom-2 left-6 text-white bg-white/10 hover:bg-white/20 hover:text-white text-xs"
+        onClick={handleTestTransaction}
+        disabled={processing || !card.is_active}
+      >
+        Test Tranzaksyon
+      </Button>
       
       {/* Card footer */}
       <div className="absolute bottom-6 right-6 flex items-center space-x-1 text-xs">
