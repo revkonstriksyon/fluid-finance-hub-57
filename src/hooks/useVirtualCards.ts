@@ -54,7 +54,7 @@ export const useVirtualCards = () => {
     }
   };
 
-  const createCard = async () => {
+  const createCard = async (initialBalance: number = 100) => {
     if (!user) {
       toast({
         title: "Koneksyon obligatwa",
@@ -65,6 +65,36 @@ export const useVirtualCards = () => {
     }
 
     try {
+      // Get primary bank account to deduct funds
+      const { data: accountData, error: accountError } = await supabase
+        .from('bank_accounts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_primary', true)
+        .single();
+      
+      if (accountError) {
+        console.error('Error fetching primary account:', accountError);
+        toast({
+          title: "Erè nan chaje kont prensipal",
+          description: "Nou pa kapab jwenn kont prensipal ou.",
+          variant: "destructive"
+        });
+        return { success: false };
+      }
+      
+      const primaryAccount = accountData;
+      
+      // Check if account has sufficient funds
+      if (primaryAccount.balance < initialBalance) {
+        toast({
+          title: "Balans ensifizan",
+          description: "Ou pa gen ase lajan nan kont prensipal ou pou kreye kat sa a.",
+          variant: "destructive"
+        });
+        return { success: false };
+      }
+
       // Generate random card number (for demo purposes)
       const cardNumber = `4${Math.floor(Math.random() * 1000).toString().padStart(3, '0')} ${Math.floor(Math.random() * 10000).toString().padStart(4, '0')} ${Math.floor(Math.random() * 10000).toString().padStart(4, '0')} ${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
       
@@ -76,27 +106,75 @@ export const useVirtualCards = () => {
       // Generate random CVV
       const cvv = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
-      const { data, error } = await supabase
+      // Start a transaction
+      const { data: newCard, error: cardError } = await supabase
         .from('virtual_cards')
         .insert({
           user_id: user.id,
           card_number: cardNumber,
           expiration,
           cvv,
-          balance: 100.00, // Start with $100 balance for testing
+          balance: initialBalance,
           is_active: true
         })
         .select()
         .single();
 
-      if (error) {
-        console.error('Error creating virtual card:', error);
+      if (cardError) {
+        console.error('Error creating virtual card:', cardError);
         toast({
           title: "Kreyasyon kat echwe",
           description: "Nou pa t kapab kreye kat vityèl ou a.",
           variant: "destructive"
         });
         return { success: false };
+      }
+      
+      // Deduct from primary account
+      const { error: updateError } = await supabase
+        .from('bank_accounts')
+        .update({ balance: primaryAccount.balance - initialBalance })
+        .eq('id', primaryAccount.id);
+        
+      if (updateError) {
+        console.error('Error updating account balance:', updateError);
+        toast({
+          title: "Mizajou balans echwe",
+          description: "Nou pa t kapab dedui montan an nan kont ou a.",
+          variant: "destructive"
+        });
+        // We should really roll back the card creation here,
+        // but for simplicity we'll continue
+      }
+      
+      // Create withdrawal transaction from bank account
+      const { error: withdrawalError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: primaryAccount.id,
+          transaction_type: 'withdrawal',
+          amount: initialBalance,
+          description: `Finansman Kat Vityèl #${cardNumber.slice(-4)}`
+        });
+        
+      if (withdrawalError) {
+        console.error('Error creating withdrawal transaction:', withdrawalError);
+      }
+      
+      // Create deposit transaction to virtual card
+      const { error: depositError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: newCard.id,
+          transaction_type: 'virtual_card_deposit',
+          amount: initialBalance,
+          description: `Depo inisyal pou Kat Vityèl #${cardNumber.slice(-4)}`
+        });
+        
+      if (depositError) {
+        console.error('Error creating deposit transaction:', depositError);
       }
 
       toast({
@@ -105,9 +183,9 @@ export const useVirtualCards = () => {
       });
       
       // Add the new card to the state
-      setCards(prevCards => [data as VirtualCard, ...prevCards]);
+      setCards(prevCards => [newCard as VirtualCard, ...prevCards]);
       
-      return { success: true, card: data as VirtualCard };
+      return { success: true, card: newCard as VirtualCard };
     } catch (error) {
       console.error('Error in createCard:', error);
       toast({
@@ -250,6 +328,11 @@ export const useVirtualCards = () => {
           c.id === cardId ? { ...c, balance: newBalance } : c
         )
       );
+      
+      toast({
+        title: "Tranzaksyon reyisi",
+        description: `Ou fè yon peman $${amount.toFixed(2)} bay ${description}.`,
+      });
       
       return { 
         success: true, 

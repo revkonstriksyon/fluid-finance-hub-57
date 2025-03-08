@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusCircle, ShoppingCart, Shield, CreditCard, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,9 +11,14 @@ import {
 } from "@/components/ui/dialog";
 import { useVirtualCards } from '@/hooks/useVirtualCards';
 import { VirtualCard } from './VirtualCard';
+import { TransactionList } from './TransactionList';
 import { VirtualCard as VirtualCardType } from '@/types/auth';
+import { Transaction } from '@/hooks/useBankData';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const VirtualCardsSection = () => {
+  const { user } = useAuth();
   const { cards, loading, createCard, simulateTransaction } = useVirtualCards();
   const [initialBalance, setInitialBalance] = useState("");
   const [showCreateCard, setShowCreateCard] = useState(false);
@@ -22,9 +27,61 @@ export const VirtualCardsSection = () => {
   const [purchaseAmount, setPurchaseAmount] = useState("");
   const [purchaseDescription, setPurchaseDescription] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [cardTransactions, setCardTransactions] = useState<Transaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
   // Track if a card creation is in progress
   const [creating, setCreating] = useState(false);
+
+  // Fetch card-related transactions
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchCardTransactions = async () => {
+      setLoadingTransactions(true);
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .in('transaction_type', ['payment', 'virtual_card_deposit'])
+          .order('created_at', { ascending: false })
+          .limit(10);
+          
+        if (error) {
+          console.error('Error fetching card transactions:', error);
+        } else {
+          setCardTransactions(data as Transaction[]);
+        }
+      } catch (error) {
+        console.error('Error in fetchCardTransactions:', error);
+      } finally {
+        setLoadingTransactions(false);
+      }
+    };
+    
+    fetchCardTransactions();
+    
+    // Subscribe to transaction updates
+    const transactionsChannel = supabase
+      .channel('virtual-card-transactions')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` }, 
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newTransaction = payload.new as Transaction;
+            if (['payment', 'virtual_card_deposit'].includes(newTransaction.transaction_type)) {
+              setCardTransactions(current => [newTransaction, ...current.slice(0, 9)]);
+            }
+          }
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(transactionsChannel);
+    };
+  }, [user]);
 
   // Handle generate card
   const handleGenerateCard = async () => {
@@ -32,7 +89,7 @@ export const VirtualCardsSection = () => {
     
     setCreating(true);
     try {
-      const result = await createCard();
+      const result = await createCard(parseFloat(initialBalance));
       if (result.success) {
         setShowCreateCard(false);
         setInitialBalance("");
@@ -199,6 +256,13 @@ export const VirtualCardsSection = () => {
                 Aprann Plis
               </Button>
             </div>
+          </div>
+          
+          <div className="mt-8">
+            <TransactionList 
+              transactions={cardTransactions}
+              loading={loadingTransactions}
+            />
           </div>
         </>
       )}
