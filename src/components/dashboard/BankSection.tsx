@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
@@ -95,6 +94,10 @@ const BankSection = () => {
       );
 
       if (result.success) {
+        toast({
+          title: "Transfè reyisi",
+          description: `${formatCurrency(amount)} voye bay ${recipientName} avèk siksè.`,
+        });
         // Reset form
         setAmount("");
         setRecipientName("");
@@ -122,6 +125,10 @@ const BankSection = () => {
       );
 
       if (result.success) {
+        toast({
+          title: "Transfè reyisi",
+          description: `${formatCurrency(amount)} voye bay ${selectedUserEmail} avèk siksè.`,
+        });
         // Reset form
         setAmount("");
         setSelectedUserId(null);
@@ -129,6 +136,14 @@ const BankSection = () => {
         setTransferPurpose("");
       }
     }
+  };
+
+  // Add helper for currency formatting
+  const formatCurrency = (amount: string) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(Number(amount));
   };
 
   const handleDeposit = async () => {

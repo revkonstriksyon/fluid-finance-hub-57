@@ -2,112 +2,80 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from './use-toast';
 import { VirtualCard } from '@/types/auth';
 
 export const useVirtualCards = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [virtualCards, setVirtualCards] = useState<VirtualCard[]>([]);
+  const [cards, setCards] = useState<VirtualCard[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
 
-  // Fetch virtual cards
   useEffect(() => {
+    if (user) {
+      fetchCards();
+    } else {
+      setCards([]);
+      setLoading(false);
+    }
+  }, [user]);
+
+  const fetchCards = async () => {
     if (!user) return;
 
-    const fetchVirtualCards = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('virtual_cards')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('virtual_cards')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Error fetching virtual cards:', error);
-          toast({
-            title: "Erè nan jwenn kat vityèl yo",
-            description: "Nou pa kapab jwenn kat vityèl ou yo pou kounye a.",
-            variant: "destructive"
-          });
-        } else {
-          setVirtualCards(data as VirtualCard[]);
-        }
-      } catch (error) {
-        console.error('Error in fetchVirtualCards:', error);
+      if (error) {
+        console.error('Error fetching virtual cards:', error);
         toast({
-          title: "Erè nan kominikasyon",
-          description: "Gen yon erè ki pase pandan nou t ap jwenn kat vityèl ou yo.",
+          title: "Erè nan chaje kat yo",
+          description: "Nou pa t kapab chaje kat vityèl ou yo.",
           variant: "destructive"
         });
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
-    fetchVirtualCards();
+      setCards(data as VirtualCard[]);
+    } catch (error) {
+      console.error('Error in fetchCards:', error);
+      toast({
+        title: "Erè nan chaje kat yo",
+        description: "Nou pa t kapab chaje kat vityèl ou yo.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Set up real-time subscription for virtual cards
-    const virtualCardsChannel = supabase
-      .channel('virtual-cards-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'virtual_cards', filter: `user_id=eq.${user.id}` }, 
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setVirtualCards(current => [payload.new as VirtualCard, ...current]);
-          } else if (payload.eventType === 'UPDATE') {
-            setVirtualCards(current => current.map(card => 
-              card.id === payload.new.id ? payload.new as VirtualCard : card
-            ));
-          } else if (payload.eventType === 'DELETE') {
-            setVirtualCards(current => current.filter(card => card.id !== payload.old.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(virtualCardsChannel);
-    };
-  }, [user, toast]);
-
-  // Generate a new virtual card
-  const generateVirtualCard = async (initialBalance: number) => {
+  const createCard = async () => {
     if (!user) {
       toast({
         title: "Koneksyon obligatwa",
-        description: "Ou dwe konekte pou jenere yon kat vityèl.",
+        description: "Ou dwe konekte pou kreye yon kat vityèl.",
         variant: "destructive"
       });
       return { success: false };
     }
 
-    if (initialBalance <= 0) {
-      toast({
-        title: "Montan envalid",
-        description: "Balans inisyal la dwe pi plis ke zewo.",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-
-    setCreating(true);
     try {
-      // Generate card details
-      // Note: In a real app, this would be more secure and handled on the server
-      const cardNumber = `4242${Math.floor(1000 + Math.random() * 9000)}${Math.floor(1000 + Math.random() * 9000)}${Math.floor(1000 + Math.random() * 9000)}`;
+      // Generate random card number (for demo purposes)
+      const cardNumber = `4${Math.floor(Math.random() * 1000).toString().padStart(3, '0')} ${Math.floor(Math.random() * 10000).toString().padStart(4, '0')} ${Math.floor(Math.random() * 10000).toString().padStart(4, '0')} ${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
       
-      // Generate expiration (3 months from now)
+      // Generate random expiration date (2-3 years in the future)
       const expDate = new Date();
-      expDate.setMonth(expDate.getMonth() + 3);
+      expDate.setFullYear(expDate.getFullYear() + Math.floor(Math.random() * 2) + 2);
       const expiration = `${(expDate.getMonth() + 1).toString().padStart(2, '0')}/${expDate.getFullYear().toString().slice(-2)}`;
       
-      // Generate CVV
-      const cvv = Math.floor(100 + Math.random() * 900).toString();
+      // Generate random CVV
+      const cvv = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
-      // Create the virtual card
       const { data, error } = await supabase
         .from('virtual_cards')
         .insert({
@@ -115,7 +83,7 @@ export const useVirtualCards = () => {
           card_number: cardNumber,
           expiration,
           cvv,
-          balance: initialBalance,
+          balance: 100.00, // Start with $100 balance for testing
           is_active: true
         })
         .select()
@@ -124,40 +92,38 @@ export const useVirtualCards = () => {
       if (error) {
         console.error('Error creating virtual card:', error);
         toast({
-          title: "Erè",
-          description: "Nou pa kapab kreye kat vityèl la. Tanpri eseye ankò.",
+          title: "Kreyasyon kat echwe",
+          description: "Nou pa t kapab kreye kat vityèl ou a.",
           variant: "destructive"
         });
         return { success: false };
       }
 
-      // Also need to deduct the balance from the user's account
-      // This would need a transaction in a real app to ensure consistency
-
       toast({
-        title: "Siksè",
-        description: "Kat vityèl kreye avèk siksè.",
+        title: "Kat vityèl kreye",
+        description: "Ou kreye yon nouvo kat vityèl Mastercard ak siksè.",
       });
+      
+      // Add the new card to the state
+      setCards(prevCards => [data as VirtualCard, ...prevCards]);
+      
       return { success: true, card: data as VirtualCard };
     } catch (error) {
-      console.error('Error in generateVirtualCard:', error);
+      console.error('Error in createCard:', error);
       toast({
-        title: "Erè",
-        description: "Gen yon erè ki pase pandan n ap eseye kreye kat vityèl la.",
+        title: "Kreyasyon kat echwe",
+        description: "Gen yon erè ki pase pandan n ap eseye kreye kat ou a.",
         variant: "destructive"
       });
       return { success: false };
-    } finally {
-      setCreating(false);
     }
   };
 
-  // Toggle card activation status
   const toggleCardStatus = async (cardId: string, activate: boolean) => {
     if (!user) {
       toast({
         title: "Koneksyon obligatwa",
-        description: "Ou dwe konekte pou chanje estati kat la.",
+        description: "Ou dwe konekte pou jere kat vityèl yo.",
         variant: "destructive"
       });
       return { success: false };
@@ -175,51 +141,44 @@ export const useVirtualCards = () => {
       if (error) {
         console.error('Error updating card status:', error);
         toast({
-          title: "Erè",
-          description: `Nou pa kapab ${activate ? 'aktive' : 'dezaktive'} kat la. Tanpri eseye ankò.`,
+          title: "Mizajou kat echwe",
+          description: "Nou pa t kapab chanje estati kat ou a.",
           variant: "destructive"
         });
         return { success: false };
       }
 
-      toast({
-        title: "Siksè",
-        description: `Kat la ${activate ? 'aktive' : 'dezaktive'} avèk siksè.`,
-      });
+      // Update the card in the state
+      setCards(prevCards => 
+        prevCards.map(card => 
+          card.id === cardId ? { ...card, is_active: activate } : card
+        )
+      );
+      
       return { success: true, card: data as VirtualCard };
     } catch (error) {
       console.error('Error in toggleCardStatus:', error);
       toast({
-        title: "Erè",
-        description: `Gen yon erè ki pase pandan n ap eseye ${activate ? 'aktive' : 'dezaktive'} kat la.`,
+        title: "Mizajou kat echwe",
+        description: "Gen yon erè ki pase pandan n ap eseye chanje estati kat ou a.",
         variant: "destructive"
       });
       return { success: false };
     }
   };
 
-  // Simulate a card transaction
   const simulateTransaction = async (cardId: string, amount: number, description: string) => {
     if (!user) {
       toast({
         title: "Koneksyon obligatwa",
-        description: "Ou dwe konekte pou fè yon tranzaksyon.",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-
-    if (amount <= 0) {
-      toast({
-        title: "Montan envalid",
-        description: "Montan tranzaksyon an dwe pi plis ke zewo.",
+        description: "Ou dwe konekte pou fè tranzaksyon.",
         variant: "destructive"
       });
       return { success: false };
     }
 
     try {
-      // First check if the card is active and has enough balance
+      // First check if the card is active and has sufficient balance
       const { data: cardData, error: cardError } = await supabase
         .from('virtual_cards')
         .select('*')
@@ -229,33 +188,16 @@ export const useVirtualCards = () => {
         .single();
 
       if (cardError || !cardData) {
-        console.error('Error fetching card:', cardError);
+        console.error('Error checking card:', cardError);
         toast({
-          title: "Erè",
-          description: "Nou pa kapab jwenn kat la oswa kat la pa aktif.",
+          title: "Tranzaksyon echwe",
+          description: "Kat la pa aktif oswa li pa egziste.",
           variant: "destructive"
         });
         return { success: false };
       }
 
       const card = cardData as VirtualCard;
-      
-      // Check expiration
-      const [month, year] = card.expiration.split('/');
-      const expDate = new Date(parseInt(`20${year}`), parseInt(month) - 1, 1);
-      expDate.setMonth(expDate.getMonth() + 1); // Last day of the month
-      expDate.setDate(0);
-      
-      if (expDate < new Date()) {
-        toast({
-          title: "Kat ekspire",
-          description: "Kat sa a ekspire. Tanpri jenere yon nouvo kat.",
-          variant: "destructive"
-        });
-        return { success: false };
-      }
-
-      // Check balance
       if (card.balance < amount) {
         toast({
           title: "Balans ensifizan",
@@ -265,10 +207,11 @@ export const useVirtualCards = () => {
         return { success: false };
       }
 
-      // Update card balance
+      // Update the card balance
+      const newBalance = card.balance - amount;
       const { data: updatedCard, error: updateError } = await supabase
         .from('virtual_cards')
-        .update({ balance: card.balance - amount })
+        .update({ balance: newBalance })
         .eq('id', cardId)
         .select()
         .single();
@@ -276,39 +219,47 @@ export const useVirtualCards = () => {
       if (updateError) {
         console.error('Error updating card balance:', updateError);
         toast({
-          title: "Erè",
-          description: "Nou pa kapab mete ajou balans kat la. Tanpri eseye ankò.",
+          title: "Tranzaksyon echwe",
+          description: "Nou pa t kapab mete ajou balans kat la.",
           variant: "destructive"
         });
         return { success: false };
       }
 
-      // Create a transaction record 
-      const { data: transactionData, error: transactionError } = await supabase
+      // Create a transaction record
+      const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
         .insert({
           user_id: user.id,
-          account_id: cardId, // Using card ID as account ID
+          account_id: cardId, // Using card ID as the account
           transaction_type: 'payment',
           amount: amount,
-          description: description
-        });
+          description: description || 'Tranzaksyon kat vityèl'
+        })
+        .select()
+        .single();
 
       if (transactionError) {
-        console.error('Error creating transaction:', transactionError);
-        // We still consider the transaction successful even if transaction recording fails
+        console.error('Error creating transaction record:', transactionError);
+        // We still consider the transaction successful even if the record fails
       }
 
-      toast({
-        title: "Tranzaksyon reyisi",
-        description: `Ou te peye $${amount} pou "${description}".`,
-      });
+      // Update the card in the state
+      setCards(prevCards => 
+        prevCards.map(c => 
+          c.id === cardId ? { ...c, balance: newBalance } : c
+        )
+      );
       
-      return { success: true, card: updatedCard as VirtualCard };
+      return { 
+        success: true, 
+        card: updatedCard as VirtualCard,
+        transaction: transaction || null
+      };
     } catch (error) {
       console.error('Error in simulateTransaction:', error);
       toast({
-        title: "Erè",
+        title: "Tranzaksyon echwe",
         description: "Gen yon erè ki pase pandan n ap eseye fè tranzaksyon an.",
         variant: "destructive"
       });
@@ -316,12 +267,60 @@ export const useVirtualCards = () => {
     }
   };
 
+  const deleteCard = async (cardId: string) => {
+    if (!user) {
+      toast({
+        title: "Koneksyon obligatwa",
+        description: "Ou dwe konekte pou efase kat vityèl yo.",
+        variant: "destructive"
+      });
+      return { success: false };
+    }
+
+    try {
+      const { error } = await supabase
+        .from('virtual_cards')
+        .delete()
+        .eq('id', cardId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting card:', error);
+        toast({
+          title: "Efase kat echwe",
+          description: "Nou pa t kapab efase kat ou a.",
+          variant: "destructive"
+        });
+        return { success: false };
+      }
+
+      // Remove the card from the state
+      setCards(prevCards => prevCards.filter(card => card.id !== cardId));
+      
+      toast({
+        title: "Kat vityèl efase",
+        description: "Ou efase kat vityèl la ak siksè.",
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error in deleteCard:', error);
+      toast({
+        title: "Efase kat echwe",
+        description: "Gen yon erè ki pase pandan n ap eseye efase kat ou a.",
+        variant: "destructive"
+      });
+      return { success: false };
+    }
+  };
+
   return {
-    virtualCards,
+    cards,
     loading,
-    creating,
-    generateVirtualCard,
+    createCard,
     toggleCardStatus,
-    simulateTransaction
+    simulateTransaction,
+    deleteCard,
+    refreshCards: fetchCards
   };
 };
