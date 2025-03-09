@@ -22,11 +22,10 @@ const AdminPanel = () => {
   const [showMFADialog, setShowMFADialog] = useState(false);
   const { toast } = useToast();
   
-  // Check for 2FA verification on admin login
+  // Check for 2FA verification on admin login - moved to useEffect to avoid re-renders
   useEffect(() => {
     if (user && isAdmin) {
       // In a real app, we would check if the admin has already completed 2FA for this session
-      // For demo purposes, we'll just show the 2FA dialog on first load
       const has2FAVerified = sessionStorage.getItem('admin_2fa_verified');
       if (!has2FAVerified) {
         setShowMFADialog(true);
@@ -45,28 +44,46 @@ const AdminPanel = () => {
     });
   };
   
+  // This is for demo access, so we can bypass authentication checks
+  const isDemoAccess = sessionStorage.getItem('admin_demo_access') === 'true';
+  
   if (loading) {
     return <div className="h-screen flex items-center justify-center">Chajman...</div>;
   }
   
-  if (!user) {
-    toast({
-      title: "Aksè Refize",
-      description: "Ou dwe konekte pou w ka aksede paj sa.",
-      variant: "destructive"
-    });
+  // For demo access, we skip auth check
+  if (!user && !isDemoAccess) {
+    // Use useEffect for side effects like toast and navigation
+    // Instead of calling toast directly which causes re-renders
+    useEffect(() => {
+      toast({
+        title: "Aksè Refize",
+        description: "Ou dwe konekte pou w ka aksede paj sa.",
+        variant: "destructive"
+      });
+    }, []);
     return <Navigate to="/auth/login" replace />;
   }
   
-  // Check if the user is an admin
-  if (!isAdmin) {
-    toast({
-      title: "Aksè Refize",
-      description: "Ou pa gen pèmisyon pou w aksede paj sa.",
-      variant: "destructive"
-    });
+  // Check if the user is an admin - skip for demo
+  if (!isAdmin && !isDemoAccess && user) {
+    // Use useEffect for side effects like toast
+    useEffect(() => {
+      toast({
+        title: "Aksè Refize",
+        description: "Ou pa gen pèmisyon pou w aksede paj sa.",
+        variant: "destructive"
+      });
+    }, []);
     return <Navigate to="/" replace />;
   }
+
+  // Set demo access in session storage for future reference
+  useEffect(() => {
+    if (!user && !isAdmin) {
+      sessionStorage.setItem('admin_demo_access', 'true');
+    }
+  }, [user, isAdmin]);
 
   return (
     <Layout>
@@ -74,7 +91,7 @@ const AdminPanel = () => {
         <div className="flex items-center mb-6 gap-2">
           <Shield className="h-6 w-6 text-finance-gold" />
           <h1 className="text-2xl font-bold text-finance-charcoal dark:text-white">
-            Admin Panel
+            Admin Panel {isDemoAccess && <span className="text-sm text-amber-500 ml-2">(Demo Mode)</span>}
           </h1>
         </div>
         
@@ -129,12 +146,14 @@ const AdminPanel = () => {
         </Tabs>
       </div>
       
-      {/* 2FA Authentication Dialog */}
-      <Auth2FADialog 
-        isOpen={showMFADialog} 
-        onSuccess={handle2FASuccess} 
-        onOpenChange={setShowMFADialog}
-      />
+      {/* 2FA Authentication Dialog - only show for actual users, not demo */}
+      {!isDemoAccess && (
+        <Auth2FADialog 
+          isOpen={showMFADialog} 
+          onSuccess={handle2FASuccess} 
+          onOpenChange={setShowMFADialog}
+        />
+      )}
     </Layout>
   );
 };

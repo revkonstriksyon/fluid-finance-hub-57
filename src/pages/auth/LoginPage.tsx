@@ -39,6 +39,8 @@ const LoginPage = () => {
   };
 
   const handleAdminDemoAccess = () => {
+    // Set the demo access in session storage
+    sessionStorage.setItem('admin_demo_access', 'true');
     navigate("/admin");
   };
 
