@@ -10,6 +10,7 @@ export const useVirtualCards = () => {
   const { toast } = useToast();
   const [cards, setCards] = useState<VirtualCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -64,6 +65,7 @@ export const useVirtualCards = () => {
       return { success: false };
     }
 
+    setCreating(true);
     try {
       // Get primary bank account to deduct funds
       const { data: accountData, error: accountError } = await supabase
@@ -106,7 +108,7 @@ export const useVirtualCards = () => {
       // Generate random CVV
       const cvv = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
-      // Start a transaction
+      // Start a transaction - First create the virtual card
       const { data: newCard, error: cardError } = await supabase
         .from('virtual_cards')
         .insert({
@@ -130,7 +132,7 @@ export const useVirtualCards = () => {
         return { success: false };
       }
       
-      // Deduct from primary account
+      // Deduct from primary account - update the balance
       const { error: updateError } = await supabase
         .from('bank_accounts')
         .update({ balance: primaryAccount.balance - initialBalance })
@@ -185,6 +187,9 @@ export const useVirtualCards = () => {
       // Add the new card to the state
       setCards(prevCards => [newCard as VirtualCard, ...prevCards]);
       
+      // Refresh cards from the database to ensure we have the latest data
+      fetchCards();
+      
       return { success: true, card: newCard as VirtualCard };
     } catch (error) {
       console.error('Error in createCard:', error);
@@ -194,6 +199,8 @@ export const useVirtualCards = () => {
         variant: "destructive"
       });
       return { success: false };
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -226,12 +233,32 @@ export const useVirtualCards = () => {
         return { success: false };
       }
 
+      // Record the status change in the transactions table
+      const statusDescription = activate ? 'Kat aktive' : 'Kat dezaktive';
+      
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: cardId,
+          transaction_type: 'virtual_card_status_change',
+          amount: 0, // No monetary value for status change
+          description: `${statusDescription} #${data.card_number.slice(-4)}`
+        });
+      
+      if (transactionError) {
+        console.error('Error recording status change transaction:', transactionError);
+      }
+
       // Update the card in the state
       setCards(prevCards => 
         prevCards.map(card => 
           card.id === cardId ? { ...card, is_active: activate } : card
         )
       );
+      
+      // Refresh cards to ensure data consistency
+      fetchCards();
       
       return { success: true, card: data as VirtualCard };
     } catch (error) {
@@ -329,6 +356,9 @@ export const useVirtualCards = () => {
         )
       );
       
+      // Refresh cards to ensure we have the latest data
+      fetchCards();
+      
       toast({
         title: "Tranzaksyon reyisi",
         description: `Ou fè yon peman $${amount.toFixed(2)} bay ${description}.`,
@@ -361,6 +391,82 @@ export const useVirtualCards = () => {
     }
 
     try {
+      // First, get the card details to reference in transaction
+      const { data: cardData, error: cardError } = await supabase
+        .from('virtual_cards')
+        .select('*')
+        .eq('id', cardId)
+        .eq('user_id', user.id)
+        .single();
+        
+      if (cardError) {
+        console.error('Error fetching card details:', cardError);
+        toast({
+          title: "Efase kat echwe",
+          description: "Nou pa t kapab jwenn detay kat ou a.",
+          variant: "destructive"
+        });
+        return { success: false };
+      }
+      
+      const card = cardData as VirtualCard;
+      
+      // If the card has balance, return it to the primary account
+      if (card.balance > 0) {
+        // Get primary account
+        const { data: accountData, error: accountError } = await supabase
+          .from('bank_accounts')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_primary', true)
+          .single();
+          
+        if (!accountError && accountData) {
+          // Update primary account balance
+          const { error: updateError } = await supabase
+            .from('bank_accounts')
+            .update({ 
+              balance: accountData.balance + card.balance 
+            })
+            .eq('id', accountData.id);
+            
+          if (updateError) {
+            console.error('Error returning funds to primary account:', updateError);
+          } else {
+            // Record the refund transaction
+            const { error: refundError } = await supabase
+              .from('transactions')
+              .insert({
+                user_id: user.id,
+                account_id: accountData.id,
+                transaction_type: 'deposit',
+                amount: card.balance,
+                description: `Ranbousman balans kat vityèl #${card.card_number.slice(-4)}`
+              });
+              
+            if (refundError) {
+              console.error('Error recording refund transaction:', refundError);
+            }
+          }
+        }
+      }
+      
+      // Record the deletion in transactions
+      const { error: deleteTransactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: cardId,
+          transaction_type: 'virtual_card_deletion',
+          amount: 0,
+          description: `Kat vityèl #${card.card_number.slice(-4)} efase`
+        });
+        
+      if (deleteTransactionError) {
+        console.error('Error recording card deletion transaction:', deleteTransactionError);
+      }
+
+      // Now delete the card
       const { error } = await supabase
         .from('virtual_cards')
         .delete()
@@ -400,6 +506,7 @@ export const useVirtualCards = () => {
   return {
     cards,
     loading,
+    creating,
     createCard,
     toggleCardStatus,
     simulateTransaction,

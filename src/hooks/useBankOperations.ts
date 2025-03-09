@@ -58,6 +58,42 @@ export const useBankOperations = () => {
         return { success: false };
       }
 
+      // Update the account balance directly
+      const { data: accountData, error: accountError } = await supabase
+        .from('bank_accounts')
+        .select('balance')
+        .eq('id', accountId)
+        .single();
+        
+      if (accountError) {
+        console.error('Error fetching account balance:', accountError);
+        toast({
+          title: "Depo echwe",
+          description: "Nou pa t kapab verifye balans ou. Tanpri eseye ankò.",
+          variant: "destructive"
+        });
+        return { success: false };
+      }
+      
+      const currentBalance = accountData.balance;
+      const newBalance = currentBalance + amount;
+      
+      const { error: updateError } = await supabase
+        .from('bank_accounts')
+        .update({ balance: newBalance })
+        .eq('id', accountId)
+        .eq('user_id', user.id);
+        
+      if (updateError) {
+        console.error('Error updating account balance:', updateError);
+        toast({
+          title: "Depo echwe",
+          description: "Nou pa t kapab mete ajou balans ou. Tanpri eseye ankò.",
+          variant: "destructive"
+        });
+        return { success: false };
+      }
+
       // Create a transaction record for the deposit
       const { data: transactionData, error: transactionError } = await supabase
         .rpc('create_transaction', {
@@ -207,6 +243,54 @@ export const useBankOperations = () => {
         return { success: false };
       }
 
+      // Update the sender's account balance - deduct the amount
+      const { error: senderUpdateError } = await supabase
+        .from('bank_accounts')
+        .update({
+          balance: accountData.balance - amount
+        })
+        .eq('id', fromAccountId)
+        .eq('user_id', user.id);
+        
+      if (senderUpdateError) {
+        console.error('Error updating sender account balance:', senderUpdateError);
+        toast({
+          title: "Transfè echwe",
+          description: "Nou pa t kapab mete ajou balans ou. Tanpri eseye ankò.",
+          variant: "destructive"
+        });
+        return { success: false };
+      }
+
+      // If we have a receiver account ID that's different from the sender's account,
+      // update the receiver's account balance
+      if (receiverAccountId && receiverId !== user.id) {
+        const { data: receiverAccountData, error: receiverAccountError } = await supabase
+          .from('bank_accounts')
+          .select('balance')
+          .eq('id', receiverAccountId)
+          .eq('user_id', receiverId)
+          .single();
+          
+        if (!receiverAccountError && receiverAccountData) {
+          const receiverBalance = receiverAccountData.balance;
+          const newReceiverBalance = receiverBalance + amount;
+          
+          const { error: receiverUpdateError } = await supabase
+            .from('bank_accounts')
+            .update({
+              balance: newReceiverBalance
+            })
+            .eq('id', receiverAccountId)
+            .eq('user_id', receiverId);
+            
+          if (receiverUpdateError) {
+            console.error('Error updating receiver account balance:', receiverUpdateError);
+            // Continue even if updating the receiver fails
+          }
+        }
+      }
+
       // Create a transaction record for the sender (withdrawal)
       const { data: senderTransactionData, error: senderTransactionError } = await supabase
         .rpc('create_transaction', {
@@ -306,6 +390,24 @@ export const useBankOperations = () => {
         });
         return { success: false };
       }
+      
+      // Update account balance - deduct payment amount
+      const newBalance = accountData.balance - amount;
+      const { error: updateError } = await supabase
+        .from('bank_accounts')
+        .update({ balance: newBalance })
+        .eq('id', accountId)
+        .eq('user_id', user.id);
+        
+      if (updateError) {
+        console.error('Error updating account balance:', updateError);
+        toast({
+          title: "Peman echwe",
+          description: "Nou pa t kapab mete ajou balans ou. Tanpri eseye ankò.",
+          variant: "destructive"
+        });
+        return { success: false };
+      }
 
       // Create a transaction record for the payment
       const { data: transactionData, error: transactionError } = await supabase
@@ -395,6 +497,21 @@ export const useBankOperations = () => {
           variant: "destructive"
         });
         return { success: false };
+      }
+
+      // Create a transaction record for the new account
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: accountData.id,
+          transaction_type: 'account_creation',
+          amount: 0, // No monetary value for account creation
+          description: `Kreyasyon kont ${accountType}: ${accountName}`
+        });
+        
+      if (transactionError) {
+        console.error('Error creating account creation transaction:', transactionError);
       }
 
       toast({
