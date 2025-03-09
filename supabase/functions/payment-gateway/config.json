@@ -1,0 +1,5 @@
+
+{
+  "name": "payment-gateway",
+  "dependensies": ["@supabase/supabase-js@2.37.0"]
+}

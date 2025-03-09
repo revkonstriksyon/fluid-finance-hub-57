@@ -3,26 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-
-export interface Transaction {
-  id: string;
-  description: string;
-  amount: number;
-  transaction_type: 'deposit' | 'withdrawal' | 'transfer_sent' | 'transfer_received' | 'payment';
-  created_at: string;
-  status: string;
-}
-
-export interface BankAccount {
-  id: string;
-  account_name: string;
-  account_number: string;
-  account_type: string;
-  balance: number;
-  currency: string;
-  account_status: string;
-  is_primary: boolean;
-}
+import { Transaction, BankAccount } from '@/types/auth';
 
 export const useBankData = () => {
   const { user } = useAuth();
