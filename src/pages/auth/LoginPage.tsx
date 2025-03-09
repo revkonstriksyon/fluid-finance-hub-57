@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, ShieldAlert } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // Import our new component modules
 import { EmailLoginForm } from "@/components/auth/EmailLoginForm";
@@ -12,12 +13,14 @@ import { OtpVerificationForm } from "@/components/auth/OtpVerificationForm";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { LoginHeader } from "@/components/auth/LoginHeader";
 import { LoginFooter } from "@/components/auth/LoginFooter";
+import { Button } from "@/components/ui/button";
 
 const LoginPage = () => {
   const { signIn, signInWithPhoneNumber, verifyPhoneOTP, signInWithGoogleAccount } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handlePhoneLogin = (formattedPhone: string) => {
     setPhoneNumber(formattedPhone);
@@ -33,6 +36,10 @@ const LoginPage = () => {
       console.error("Error during Google sign in:", error);
       setIsLoading(false);
     }
+  };
+
+  const handleAdminDemoAccess = () => {
+    navigate("/admin");
   };
 
   return (
@@ -69,6 +76,26 @@ const LoginPage = () => {
             onGoogleLogin={handleGoogleSignIn} 
             isLoading={isLoading} 
           />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Oubyen
+              </span>
+            </div>
+          </div>
+
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2 border-dashed" 
+            onClick={handleAdminDemoAccess}
+          >
+            <ShieldAlert className="h-4 w-4 text-amber-500" />
+            Antre nan Paj Administratè (Demo)
+          </Button>
         </CardContent>
         
         <LoginFooter />
