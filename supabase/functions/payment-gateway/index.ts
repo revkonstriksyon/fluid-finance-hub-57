@@ -52,9 +52,25 @@ const initializePayment = async (req: Request) => {
       );
     }
     
+    // Check account exists
+    const { data: accountData, error: accountError } = await supabase
+      .from('bank_accounts')
+      .select('*')
+      .eq('id', accountId)
+      .eq('user_id', userId)
+      .single();
+      
+    if (accountError || !accountData) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid account' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+          status: 400 
+        }
+      );
+    }
+
     // In a real implementation, we would make API calls to the payment gateway
-    // For demo purposes, we'll simulate a successful payment
-    
     // Generate a transaction reference
     const transactionRef = crypto.randomUUID();
     
@@ -66,10 +82,9 @@ const initializePayment = async (req: Request) => {
         account_id: accountId,
         transaction_type: 'deposit',
         amount,
-        method,
         description: description || `Depo via ${method} (${phone})`,
         status: 'pending',
-        reference_id: null
+        reference_id: transactionRef
       })
       .select()
       .single();
@@ -77,13 +92,22 @@ const initializePayment = async (req: Request) => {
     if (transactionError) {
       console.error('Error creating transaction:', transactionError);
       return new Response(
-        JSON.stringify({ error: 'Failed to create transaction' }),
+        JSON.stringify({ error: 'Failed to create transaction', details: transactionError }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
           status: 500 
         }
       );
     }
+
+    // Create a notification for the user
+    await supabase.from('notifications')
+      .insert({
+        user_id: userId,
+        message: `Depo $${amount} via ${method} inisye. Tann konfimasyon.`,
+        type: 'in-app',
+        read: false
+      });
     
     console.log(`Payment initialized: ${method} payment of ${amount} for user ${userId}`);
     
@@ -106,7 +130,7 @@ const initializePayment = async (req: Request) => {
   } catch (error) {
     console.error('Error in initializePayment:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status: 500 
@@ -140,7 +164,7 @@ const verifyPayment = async (req: Request) => {
     if (transactionError) {
       console.error('Error fetching transaction:', transactionError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch transaction' }),
+        JSON.stringify({ error: 'Failed to fetch transaction', details: transactionError }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
           status: 500 
@@ -165,22 +189,33 @@ const verifyPayment = async (req: Request) => {
     const isSuccessful = Math.random() > 0.2; // 80% success rate
     
     if (isSuccessful) {
-      // Update the transaction to 'completed'
-      const { error: updateError } = await supabase
-        .from('transactions')
-        .update({ status: 'completed' })
-        .eq('id', transactionId);
+      // Use the database function to update the transaction to 'completed'
+      // This will also update the account balance
+      const { data: updated, error: updateError } = await supabase
+        .rpc('finalize_transaction', {
+          p_transaction_id: transactionId,
+          p_status: 'completed'
+        });
       
       if (updateError) {
         console.error('Error updating transaction:', updateError);
         return new Response(
-          JSON.stringify({ error: 'Failed to update transaction' }),
+          JSON.stringify({ error: 'Failed to update transaction', details: updateError }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
             status: 500 
           }
         );
       }
+
+      // Create a notification for the user
+      await supabase.from('notifications')
+        .insert({
+          user_id: transaction.user_id,
+          message: `Depo $${transaction.amount} konplete avèk siksè.`,
+          type: 'in-app',
+          read: false
+        });
       
       console.log(`Payment verified successfully for transaction ${transactionId}`);
       
@@ -205,6 +240,15 @@ const verifyPayment = async (req: Request) => {
       if (updateError) {
         console.error('Error updating transaction:', updateError);
       }
+
+      // Create a notification for the user
+      await supabase.from('notifications')
+        .insert({
+          user_id: transaction.user_id,
+          message: `Depo $${transaction.amount} echwe. Tanpri eseye ankò.`,
+          type: 'in-app',
+          read: false
+        });
       
       console.log(`Payment verification failed for transaction ${transactionId}`);
       
@@ -223,7 +267,7 @@ const verifyPayment = async (req: Request) => {
   } catch (error) {
     console.error('Error in verifyPayment:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status: 500 

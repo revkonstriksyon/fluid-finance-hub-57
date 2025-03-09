@@ -93,7 +93,14 @@ export const useBankData = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` }, 
         (payload) => {
+          console.log('Transaction realtime update:', payload);
           if (payload.eventType === 'INSERT') {
+            // Show notification for new transaction
+            toast({
+              title: "Nouvo Tranzaksyon",
+              description: `Ou gen yon nouvo tranzaksyon: $${payload.new.amount}`
+            });
+            
             setTransactions(current => [payload.new as Transaction, ...current.slice(0, 9)]);
           } else if (payload.eventType === 'UPDATE') {
             setTransactions(current => current.map(transaction => 

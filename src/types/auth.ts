@@ -1,3 +1,4 @@
+
 // User profile with financial data
 export interface FinancialUser {
   id: string;
@@ -7,6 +8,38 @@ export interface FinancialUser {
   verified: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// Profile for user display information
+export interface Profile {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  phone: string | null;
+  location: string | null;
+  bio: string | null;
+  joined_date: string | null;
+}
+
+export type ExtendedProfile = Profile & {
+  accountBalance?: number;
+};
+
+// Auth context type definition
+export interface AuthContextType {
+  user: FinancialUser | null;
+  userProfile: Profile | null;
+  isAdmin: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  loginWithPhone: (phone: string) => Promise<{ error: any }>;
+  verifyOTP: (phone: string, otp: string) => Promise<{ error: any }>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithFacebook: () => Promise<void>;
+  logout: () => Promise<void>;
+  register: (email: string, password: string, phone: string) => Promise<{ error: any }>;
+  updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
 }
 
 // Bank account from database
@@ -59,6 +92,16 @@ export interface VirtualCard {
   created_at: string;
 }
 
+// Payment method
+export interface PaymentMethod {
+  id: string;
+  user_id: string;
+  type: string;
+  details: any;
+  is_verified: boolean;
+  created_at: string;
+}
+
 // Admin log
 export interface AdminLog {
   id: string;
@@ -67,5 +110,15 @@ export interface AdminLog {
   target_id: string;
   target_table: string;
   details: any;
+  created_at: string;
+}
+
+// Notification
+export interface Notification {
+  id: string;
+  user_id: string;
+  message: string;
+  type: 'email' | 'sms' | 'in-app';
+  read: boolean;
   created_at: string;
 }
