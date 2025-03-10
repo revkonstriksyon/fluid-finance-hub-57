@@ -1,336 +1,199 @@
+import { useToast } from '@/components/ui/use-toast';
+import { supabase, signInWithPhone, verifyOTP, signInWithGoogle, signInWithFacebook } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { BankAccount, Transaction } from '@/types/auth';
-
-export const useBankOperations = () => {
-  const { user } = useAuth();
+export const useAuthOperations = () => {
   const { toast } = useToast();
-  const [processingDeposit, setProcessingDeposit] = useState(false);
-  const [processingTransfer, setProcessingTransfer] = useState(false);
-  const [processingBill, setProcessingBill] = useState(false);
-  const [processingAddAccount, setProcessingAddAccount] = useState(false);
 
-  const makeDeposit = async (accountId: string, amount: number, method: string, description?: string) => {
-    if (!user) {
-      toast({
-        title: "Koneksyon obligatwa",
-        description: "Ou dwe konekte pou fè yon depo.",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
+  // Remove useNavigate from here as it causes issues when used outside Router
 
-    if (amount <= 0) {
-      toast({
-        title: "Montan envalid",
-        description: "Montan depo a dwe pi plis ke zewo.",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-
-    setProcessingDeposit(true);
+  const signIn = async (email: string, password: string) => {
     try {
-      // Call the create_transaction database function to ensure atomic operation
-      const { data: transactionData, error: transactionError } = await supabase
-        .rpc('create_transaction', {
-          p_user_id: user.id,
-          p_account_id: accountId,
-          p_transaction_type: 'deposit',
-          p_amount: amount,
-          p_description: description || `Depo via ${method}`
-        });
-
-      if (transactionError) {
-        console.error('Error creating transaction:', transactionError);
-        toast({
-          title: "Depo echwe",
-          description: "Nou pa t kapab trete depo ou a. Tanpri eseye ankò.",
-          variant: "destructive"
-        });
-        return { success: false };
-      }
-
-      toast({
-        title: "Depo reyisi",
-        description: `Ou depoze $${amount} nan kont ou`,
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
       
-      return { success: true, transactionId: transactionData };
-    } catch (error) {
-      console.error('Error in makeDeposit:', error);
+      // Special message for admin
+      if (email === 'admin@gmail.com') {
+        toast({
+          title: "Koneksyon admin reyisi",
+          description: "Ou konekte kòm administratè.",
+        });
+      } else {
+        toast({
+          title: "Koneksyon reyisi",
+          description: "Ou konekte nan kont ou.",
+        });
+      }
+      
+      // Let the component handle navigation
+      return { error: null };
+    } catch (error: any) {
       toast({
-        title: "Depo echwe",
-        description: "Gen yon erè ki pase pandan n ap eseye fè depo a.",
+        title: "Erè koneksyon",
+        description: error.message || "Tanpri tcheke imel ou ak modpas epi eseye ankò.",
         variant: "destructive"
       });
-      return { success: false };
-    } finally {
-      setProcessingDeposit(false);
+      return { error };
     }
   };
 
-  const makeTransfer = async (
-    fromAccountId: string, 
-    toUserId: string | null, 
-    toAccountId: string | null,
-    amount: number, 
-    description: string,
-    purpose?: string
-  ) => {
-    if (!user) {
-      toast({
-        title: "Koneksyon obligatwa",
-        description: "Ou dwe konekte pou fè yon transfè.",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-
-    if (amount <= 0) {
-      toast({
-        title: "Montan envalid",
-        description: "Montan transfè a dwe pi plis ke zewo.",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-
-    setProcessingTransfer(true);
+  const signUp = async (email: string, password: string, name: string) => {
     try {
-      // Get current account balance
-      const { data: accountData, error: accountError } = await supabase
-        .from('bank_accounts')
-        .select('balance')
-        .eq('id', fromAccountId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (accountError || !accountData) {
-        console.error('Error fetching account balance:', accountError);
-        toast({
-          title: "Transfè echwe",
-          description: "Nou pa t kapab verifye balans ou. Tanpri eseye ankò.",
-          variant: "destructive"
-        });
-        return { success: false };
-      }
-
-      if (accountData.balance < amount) {
-        toast({
-          title: "Balans ensifizan",
-          description: "Ou pa gen ase lajan nan kont la pou fè transfè sa a.",
-          variant: "destructive"
-        });
-        return { success: false };
-      }
-
-      // Use a database transaction to ensure atomicity
-      const { data: result, error: transferError } = await supabase.rpc('transfer_funds', { 
-        p_sender_account_id: fromAccountId,
-        p_receiver_id: toUserId,
-        p_receiver_account_id: toAccountId,
-        p_amount: amount,
-        p_description: description,
-        p_purpose: purpose || 'transfer'
+      const { error, data } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          }
+        }
       });
 
-      if (transferError) {
-        console.error('Error in transfer_funds:', transferError);
-        toast({
-          title: "Transfè echwe",
-          description: transferError.message || "Nou pa t kapab konplete transfè a. Tanpri eseye ankò.",
-          variant: "destructive"
-        });
-        return { success: false };
-      }
-
-      toast({
-        title: "Transfè reyisi",
-        description: `Ou voye $${amount} bay destinasyon an.`,
-      });
-      
-      return { success: true, transactionId: result };
-    } catch (error) {
-      console.error('Error in makeTransfer:', error);
-      toast({
-        title: "Transfè echwe",
-        description: "Gen yon erè ki pase pandan n ap eseye fè transfè a.",
-        variant: "destructive"
-      });
-      return { success: false };
-    } finally {
-      setProcessingTransfer(false);
-    }
-  };
-
-  const payBill = async (accountId: string, provider: string, billNumber: string, amount: number) => {
-    if (!user) {
-      toast({
-        title: "Koneksyon obligatwa",
-        description: "Ou dwe konekte pou peye yon bòdwo.",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-
-    if (amount <= 0) {
-      toast({
-        title: "Montan envalid",
-        description: "Montan peman an dwe pi plis ke zewo.",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-
-    setProcessingBill(true);
-    try {
-      // Start a Supabase transaction
-      // First, deduct money from the account
-      const { data: transaction, error: transactionError } = await supabase.rpc('create_transaction', {
-        p_user_id: user.id,
-        p_account_id: accountId,
-        p_transaction_type: 'payment',
-        p_amount: amount,
-        p_description: `Peman ${provider} - Kont #${billNumber}`
-      });
-
-      if (transactionError) {
-        console.error('Error creating payment transaction:', transactionError);
-        toast({
-          title: "Peman echwe",
-          description: "Nou pa t kapab trete peman ou a. Tanpri eseye ankò.",
-          variant: "destructive"
-        });
-        return { success: false };
-      }
-
-      // Create a bill record
-      const { data: billData, error: billError } = await supabase
-        .from('bills')
-        .insert({
-          user_id: user.id,
-          type: provider as any,
-          amount: amount,
-          bill_number: billNumber,
-          paid_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (billError) {
-        console.error('Error creating bill record:', billError);
-        // Since the transaction has already completed, we don't revert it
-        // but we do notify the user
-        toast({
-          title: "Peman reyisi, men gen erè",
-          description: "Peman an te fèt, men nou pa t kapab anrejistre fakti a.",
-          variant: "warning"
-        });
-        return { success: true, transaction };
-      }
-
-      toast({
-        title: "Peman reyisi",
-        description: `Ou peye $${amount} pou ${provider}.`,
-      });
-      
-      return { success: true, transaction, bill: billData };
-    } catch (error) {
-      console.error('Error in payBill:', error);
-      toast({
-        title: "Peman echwe",
-        description: "Gen yon erè ki pase pandan n ap eseye fè peman an.",
-        variant: "destructive"
-      });
-      return { success: false };
-    } finally {
-      setProcessingBill(false);
-    }
-  };
-
-  const addAccount = async (accountName: string, accountType: string) => {
-    if (!user) {
-      toast({
-        title: "Koneksyon obligatwa",
-        description: "Ou dwe konekte pou kreye yon kont.",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-
-    setProcessingAddAccount(true);
-    try {
-      // Generate a random account number
-      const accountNumber = `ACCT-${Math.floor(Math.random() * 10000000).toString().padStart(8, '0')}`;
-      
-      // Check if this will be the first account (should be primary)
-      const { count, error: countError } = await supabase
-        .from('bank_accounts')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-        
-      if (countError) {
-        console.error('Error checking existing accounts:', countError);
-      }
-      
-      const isPrimary = count === 0;
-
-      // Create the account
-      const { data: accountData, error: accountError } = await supabase
-        .from('bank_accounts')
-        .insert({
-          user_id: user.id,
-          account_name: accountName,
-          account_number: accountNumber,
-          account_type: accountType,
-          balance: 0, // Start with zero balance
-          is_primary: isPrimary,
-          currency: 'USD'
-        })
-        .select()
-        .single();
-
-      if (accountError) {
-        console.error('Error creating account:', accountError);
-        toast({
-          title: "Kreyasyon kont echwe",
-          description: "Nou pa t kapab kreye kont ou a. Tanpri eseye ankò.",
-          variant: "destructive"
-        });
-        return { success: false };
-      }
+      if (error) throw error;
 
       toast({
         title: "Kont kreye",
-        description: `Ou kreye yon nouvo kont ${accountType}: ${accountName}`,
+        description: "Tcheke imel ou pou konfime kont ou.",
       });
       
-      return { success: true, account: accountData as BankAccount };
-    } catch (error) {
-      console.error('Error in addAccount:', error);
+      return { error: null, user: data?.user || null };
+    } catch (error: any) {
       toast({
-        title: "Kreyasyon kont echwe",
-        description: "Gen yon erè ki pase pandan n ap eseye kreye kont lan.",
+        title: "Erè enskripsyon",
+        description: error.message || "Pa kapab kreye kont ou. Tanpri eseye ankò.",
         variant: "destructive"
       });
-      return { success: false };
-    } finally {
-      setProcessingAddAccount(false);
+      return { error, user: null };
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Dekonekte",
+        description: "Ou dekonekte soti nan kont ou.",
+      });
+      
+      // Let the component handle navigation
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè dekoneksyon",
+        description: error.message || "Pa kapab dekonekte. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Imel reyinisyalizasyon modpas voye",
+        description: "Tcheke imel ou pou enstriksyon sou reyinisyalizasyon modpas.",
+      });
+      
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè reyinisyalizasyon modpas",
+        description: error.message || "Pa kapab voye imel reyinisyalizasyon. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
+  const signInWithPhoneNumber = async (phone: string) => {
+    try {
+      const { error } = await signInWithPhone(phone);
+      if (error) throw error;
+      
+      toast({
+        title: "Kòd OTP voye",
+        description: "Tanpri verifye telefòn ou pou kòd OTP a.",
+      });
+      
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè koneksyon",
+        description: error.message || "Pa kapab voye kòd OTP. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
+  const verifyPhoneOTP = async (phone: string, token: string) => {
+    try {
+      const { data, error } = await verifyOTP(phone, token);
+      if (error) throw error;
+      
+      toast({
+        title: "Verifikasyon reyisi",
+        description: "Ou konekte ak kont ou.",
+      });
+      
+      // Let the component handle navigation
+      return { error: null, user: data?.user || null };
+    } catch (error: any) {
+      toast({
+        title: "Erè verifikasyon",
+        description: error.message || "Kòd OTP ou antre a pa valid. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error, user: null };
+    }
+  };
+
+  const signInWithGoogleAccount = async () => {
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè koneksyon Google",
+        description: error.message || "Pa kapab konekte ak Google. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
+  const signInWithFacebookAccount = async () => {
+    try {
+      const { error } = await signInWithFacebook();
+      if (error) throw error;
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erè koneksyon Facebook",
+        description: error.message || "Pa kapab konekte ak Facebook. Tanpri eseye ankò.",
+        variant: "destructive"
+      });
+      return { error };
     }
   };
 
   return {
-    makeDeposit,
-    makeTransfer,
-    payBill,
-    addAccount,
-    processingDeposit,
-    processingTransfer,
-    processingBill,
-    processingAddAccount
+    signIn,
+    signUp,
+    signOut,
+    resetPassword,
+    signInWithPhoneNumber,
+    verifyPhoneOTP,
+    signInWithGoogleAccount,
+    signInWithFacebookAccount
   };
 };

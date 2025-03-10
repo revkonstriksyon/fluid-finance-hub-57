@@ -1,7 +1,7 @@
+import { User } from '@supabase/supabase-js';
 
 // User profile with financial data
-export interface FinancialUser {
-  id: string;
+export interface FinancialUser extends User {
   email: string;
   phone: string;
   balance: number;
@@ -29,17 +29,22 @@ export type ExtendedProfile = Profile & {
 // Auth context type definition
 export interface AuthContextType {
   user: FinancialUser | null;
+  profile: Profile | null;
   userProfile: Profile | null;
   isAdmin: boolean;
   loading: boolean;
+  userLoading: boolean;
+  bankAccounts: BankAccount[];
   login: (email: string, password: string) => Promise<{ error: any }>;
-  loginWithPhone: (phone: string) => Promise<{ error: any }>;
-  verifyOTP: (phone: string, otp: string) => Promise<{ error: any }>;
-  loginWithGoogle: () => Promise<void>;
-  loginWithFacebook: () => Promise<void>;
-  logout: () => Promise<void>;
-  register: (email: string, password: string, phone: string) => Promise<{ error: any }>;
-  updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ error: any, user: any }>;
+  signOut: () => Promise<{ error: any }>;
+  signInWithPhoneNumber: (phone: string) => Promise<{ error: any }>;
+  verifyPhoneOTP: (phone: string, token: string) => Promise<{ error: any, user: any }>;
+  signInWithGoogleAccount: () => Promise<{ error: any }>;
+  signInWithFacebookAccount: () => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  refreshProfile: () => Promise<void>;
 }
 
 // Bank account from database

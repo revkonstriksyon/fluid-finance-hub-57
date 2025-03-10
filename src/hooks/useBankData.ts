@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Transaction, BankAccount } from '@/types/auth';
 
+export type { Transaction, BankAccount };
+
 export const useBankData = () => {
   const { user } = useAuth();
   const { toast } = useToast();
