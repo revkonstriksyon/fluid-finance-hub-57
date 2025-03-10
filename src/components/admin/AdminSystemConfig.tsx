@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -9,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
-interface AdminSystemConfigProps {
+export interface AdminSystemConfigProps {
   logs: any[];
   loading: boolean;
 }

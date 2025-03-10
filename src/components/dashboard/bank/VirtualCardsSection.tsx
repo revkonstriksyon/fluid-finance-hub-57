@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { VirtualCard as VirtualCardComponent } from './VirtualCard';
-import { AddCard } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { useVirtualCard } from '@/hooks/useVirtualCard';
 
 export const VirtualCardsSection = () => {
@@ -25,8 +26,8 @@ export const VirtualCardsSection = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="section-title">Kat Virtual</h3>
-        <Button onClick={() => setIsCreating(true)} disabled={isCreating || loading}>
-          <AddCard className="mr-2 h-4 w-4" />
+        <Button onClick={handleCreateCard} disabled={isCreating || loading || processingCreate}>
+          <PlusCircle className="mr-2 h-4 w-4" />
           Kreye Kat
         </Button>
       </div>

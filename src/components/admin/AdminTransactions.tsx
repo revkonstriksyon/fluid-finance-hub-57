@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import {
   Table,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/table"
 import { format } from 'date-fns';
 
-interface AdminTransactionsProps {
+export interface AdminTransactionsProps {
   transactions: any[];
   loading: boolean;
 }

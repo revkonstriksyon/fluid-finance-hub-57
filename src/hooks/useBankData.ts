@@ -1,127 +1,121 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Transaction, BankAccount } from '@/types/auth';
+import { useState, useEffect } from "react";
+import { useToast } from "./use-toast";
+import { supabase } from "@/lib/supabase";
 
-export type { Transaction, BankAccount };
+export interface BankAccount {
+  id: string;
+  user_id: string;
+  account_name: string;
+  account_number: string;
+  balance: number;
+  created_at: string;
+}
+
+export interface Transaction {
+  id: string;
+  user_id: string;
+  account_id: string;
+  transaction_type: string;
+  amount: number;
+  description?: string;
+  status: string;
+  created_at: string;
+  reference_id?: string;
+}
 
 export const useBankData = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch bank accounts and transactions
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchBankData = async () => {
+  const fetchBankAccounts = async () => {
+    try {
       setLoading(true);
-      try {
-        // Fetch bank accounts
-        const { data: accountsData, error: accountsError } = await supabase
-          .from('bank_accounts')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('is_primary', { ascending: false });
-
-        if (accountsError) {
-          console.error('Error fetching accounts:', accountsError);
-          toast({
-            title: "Erè nan jwenn kont yo",
-            description: "Nou pa kapab jwenn enfòmasyon kont ou yo pou kounye a.",
-            variant: "destructive"
-          });
-        } else {
-          setAccounts(accountsData as BankAccount[]);
-        }
-
-        // Fetch recent transactions
-        const { data: transactionsData, error: transactionsError } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        if (transactionsError) {
-          console.error('Error fetching transactions:', transactionsError);
-          toast({
-            title: "Erè nan jwenn tranzaksyon yo",
-            description: "Nou pa kapab jwenn istwa tranzaksyon ou yo pou kounye a.",
-            variant: "destructive"
-          });
-        } else {
-          setTransactions(transactionsData as Transaction[]);
-        }
-      } catch (error) {
-        console.error('Error in fetchBankData:', error);
-        toast({
-          title: "Erè nan kominikasyon",
-          description: "Gen yon erè ki pase pandan nou t ap jwenn enfòmasyon bank ou yo.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (!userData.user) {
+        throw new Error("User not authenticated");
       }
-    };
 
-    fetchBankData();
+      const { data, error } = await supabase
+        .from("bank_accounts")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .order("created_at", { ascending: false });
 
-    // Set up real-time subscription for bank accounts and transactions
-    const accountsChannel = supabase
-      .channel('bank-accounts-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'bank_accounts', filter: `user_id=eq.${user.id}` }, 
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setAccounts(current => [...current, payload.new as BankAccount]);
-          } else if (payload.eventType === 'UPDATE') {
-            setAccounts(current => current.map(account => 
-              account.id === payload.new.id ? payload.new as BankAccount : account
-            ));
-          } else if (payload.eventType === 'DELETE') {
-            setAccounts(current => current.filter(account => account.id !== payload.old.id));
-          }
-        }
-      )
-      .subscribe();
+      if (error) {
+        throw error;
+      }
 
-    const transactionsChannel = supabase
-      .channel('transactions-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` }, 
-        (payload) => {
-          console.log('Transaction realtime update:', payload);
-          if (payload.eventType === 'INSERT') {
-            // Show notification for new transaction
-            toast({
-              title: "Nouvo Tranzaksyon",
-              description: `Ou gen yon nouvo tranzaksyon: $${payload.new.amount}`
-            });
-            
-            setTransactions(current => [payload.new as Transaction, ...current.slice(0, 9)]);
-          } else if (payload.eventType === 'UPDATE') {
-            setTransactions(current => current.map(transaction => 
-              transaction.id === payload.new.id ? payload.new as Transaction : transaction
-            ));
-          }
-        }
-      )
-      .subscribe();
+      setAccounts(data || []);
+      return data;
+    } catch (error) {
+      console.error("Error fetching bank accounts:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch your bank accounts. Please try again.",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return () => {
-      supabase.removeChannel(accountsChannel);
-      supabase.removeChannel(transactionsChannel);
-    };
-  }, [user, toast]);
+  const fetchTransactions = async (accountId?: string) => {
+    try {
+      setLoading(true);
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (!userData.user) {
+        throw new Error("User not authenticated");
+      }
+
+      let query = supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .order("created_at", { ascending: false });
+
+      // If accountId is provided, filter transactions for that account
+      if (accountId) {
+        query = query.eq("account_id", accountId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      setTransactions(data || []);
+      return data;
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch your transactions. Please try again.",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initialize data on component mount
+  useEffect(() => {
+    fetchBankAccounts();
+    fetchTransactions();
+  }, []);
 
   return {
     accounts,
     transactions,
-    loading
+    loading,
+    fetchBankAccounts,
+    fetchTransactions,
   };
 };
