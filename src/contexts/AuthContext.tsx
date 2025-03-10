@@ -39,13 +39,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get session on initial load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Check admin status
-      setIsAdmin(checkAdminStatus(session?.user?.email));
-      
       if (session?.user) {
+        // Add the required properties for FinancialUser
+        const financialUser = {
+          ...session.user,
+          balance: 0,  // Default value
+          verified: false,  // Default value
+        };
+        setUser(financialUser);
+        
+        // Check admin status
+        setIsAdmin(checkAdminStatus(session.user.email));
+        
         fetchUserProfile(session.user.id);
+      } else {
+        setUser(null);
       }
       
       setLoading(false);
@@ -54,13 +62,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Check admin status
-      setIsAdmin(checkAdminStatus(session?.user?.email));
-      
       if (session?.user) {
+        // Add the required properties for FinancialUser
+        const financialUser = {
+          ...session.user,
+          balance: 0,  // Default value
+          verified: false,  // Default value
+        };
+        setUser(financialUser);
+        
+        // Check admin status
+        setIsAdmin(checkAdminStatus(session.user.email));
+        
         fetchUserProfile(session.user.id);
+      } else {
+        setUser(null);
       }
       
       setLoading(false);

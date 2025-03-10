@@ -2,17 +2,21 @@
 import { useState, useEffect } from "react";
 import { useToast } from "./use-toast";
 import { supabase } from "@/lib/supabase";
+import { BankAccount as AuthBankAccount, Transaction as AuthTransaction } from "@/types/auth";
 
-export interface BankAccount {
+export interface BankAccount extends AuthBankAccount {
   id: string;
   user_id: string;
   account_name: string;
   account_number: string;
   balance: number;
+  account_type: string;
+  currency: string;
+  is_primary: boolean;
   created_at: string;
 }
 
-export interface Transaction {
+export interface Transaction extends AuthTransaction {
   id: string;
   user_id: string;
   account_id: string;

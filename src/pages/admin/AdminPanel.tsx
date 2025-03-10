@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -300,7 +299,7 @@ const AdminPanel = () => {
           </TabsList>
           
           <TabsContent value="dashboard">
-            <AdminDashboard adminData={adminData} />
+            <AdminDashboard adminData={adminData} loading={dataLoading} />
           </TabsContent>
           
           <TabsContent value="users">
@@ -328,7 +327,7 @@ const AdminPanel = () => {
           </TabsContent>
           
           <TabsContent value="config">
-            <AdminSystemConfig />
+            <AdminSystemConfig logs={adminData.adminLogs} loading={dataLoading} />
           </TabsContent>
         </Tabs>
       </div>

@@ -1,15 +1,14 @@
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, CreditCard, FileText, ClipboardList } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { DollarSign, Users, CreditCard, FileText } from "lucide-react";
 import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
 import { AdminTransactions } from "@/components/admin/AdminTransactions";
 import { AdminVirtualCards } from "@/components/admin/AdminVirtualCards";
 import { AdminBills } from "@/components/admin/AdminBills";
 import { AdminSystemConfig } from "@/components/admin/AdminSystemConfig";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAdminData } from "@/hooks/useAdminData";
 
-interface AdminDashboardProps {
+export interface AdminDashboardProps {
   adminData: {
     users: any[];
     transactions: any[];
@@ -78,6 +77,7 @@ export const AdminDashboard = ({ adminData, loading }: AdminDashboardProps) => {
         <Card>
           <CardHeader>
             <CardTitle>Jesyon Itilizatè</CardTitle>
+            <CardDescription>Administre itilizatè yo</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -91,6 +91,7 @@ export const AdminDashboard = ({ adminData, loading }: AdminDashboardProps) => {
         <Card>
           <CardHeader>
             <CardTitle>Dènye Tranzaksyon</CardTitle>
+            <CardDescription>Tranzaksyon ki fèt resamman</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (

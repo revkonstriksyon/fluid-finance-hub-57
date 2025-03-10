@@ -1,25 +1,14 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBankData } from './useBankData';
-import { useToast } from './use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
-
-export interface VirtualCard {
-  id: string;
-  user_id: string;
-  card_number: string;
-  holder_name: string;
-  expiry_date: string;
-  cvv: string;
-  balance: number;
-  status: 'active' | 'inactive' | 'blocked';
-  created_at: string;
-}
+import { VirtualCard as VirtualCardType } from '@/types/auth';
 
 export const useVirtualCard = () => {
   const { toast } = useToast();
   const { fetchBankAccounts } = useBankData();
-  const [cards, setCards] = useState<VirtualCard[]>([]);
+  const [cards, setCards] = useState<VirtualCardType[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingCreate, setProcessingCreate] = useState(false);
   const [processingTopUp, setProcessingTopUp] = useState(false);
@@ -85,11 +74,10 @@ export const useVirtualCard = () => {
           {
             user_id: user.user.id,
             card_number: cardNumber,
-            holder_name: profile?.full_name || 'Card Holder',
-            expiry_date: expiryDate,
+            expiration: expiryDate,
             cvv: cvv,
             balance: initialBalance,
-            status: 'active'
+            is_active: true
           }
         ])
         .select()
@@ -147,9 +135,18 @@ export const useVirtualCard = () => {
       });
 
       // Then add to virtual card
+      const { data: cardData } = await supabase
+        .from('virtual_cards')
+        .select('balance')
+        .eq('id', cardId)
+        .eq('user_id', user.user.id)
+        .single();
+
+      const newBalance = (cardData?.balance || 0) + amount;
+
       const { data, error } = await supabase
         .from('virtual_cards')
-        .update({ balance: supabase.rpc('get_current_balance', { card_id: cardId }) + amount })
+        .update({ balance: newBalance })
         .eq('id', cardId)
         .eq('user_id', user.user.id)
         .select()
@@ -190,7 +187,7 @@ export const useVirtualCard = () => {
 
       const { data, error } = await supabase
         .from('virtual_cards')
-        .update({ status: 'inactive' })
+        .update({ is_active: false })
         .eq('id', cardId)
         .eq('user_id', user.user.id)
         .select()
@@ -221,7 +218,7 @@ export const useVirtualCard = () => {
   };
 
   // Fetch virtual cards on mount
-  useState(() => {
+  useEffect(() => {
     fetchVirtualCards();
   }, []);
 
